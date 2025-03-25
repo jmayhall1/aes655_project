@@ -9,7 +9,7 @@ import matplotlib.pyplot as plt
 import netCDF4
 import numpy as np
 import pandas as pd
-from mayavi import mlab
+from matplotlib.colors import LinearSegmentedColormap
 
 path = '//uahdata/rstor/aes655_project/cm1out_azimavg_s.nc'
 
@@ -33,6 +33,33 @@ data_avg_change = np.nanmean(data_change, axis=0)
 data_avg_adv = np.nanmean(data_adv, axis=0)
 data_avg_ke = np.nanmean(data_ke, axis=0)
 data_avg_vert = np.nanmean(data_vert, axis=0)
+
+count_array_shear = ((np.abs(data_avg_shear) > np.abs(data_avg_buoy)) & (np.abs(data_avg_shear) > np.abs(data_avg_diss))
+                     & (np.abs(data_avg_shear) > np.abs(data_avg_adv))).astype('int')
+count_array_buoy = ((np.abs(data_avg_buoy) > np.abs(data_avg_shear)) & (np.abs(data_avg_buoy) > np.abs(data_avg_diss))
+                    & (np.abs(data_avg_buoy) > np.abs(data_avg_adv))).astype('int')
+count_array_buoy[count_array_buoy == 1] = 2
+count_array_adv = ((np.abs(data_avg_adv) > np.abs(data_avg_buoy)) & (np.abs(data_avg_adv) > np.abs(data_avg_diss))
+                   & (np.abs(data_avg_adv) > np.abs(data_avg_shear))).astype('int')
+count_array_adv[count_array_adv == 1] = 3
+count_array_diss = ((np.abs(data_avg_diss) > np.abs(data_avg_buoy)) & (np.abs(data_avg_diss) > np.abs(data_avg_shear))
+                    & (np.abs(data_avg_diss) > np.abs(data_avg_adv))).astype('int')
+count_array_diss[count_array_diss == 1] = 4
+count_array = count_array_shear + count_array_buoy + count_array_adv + count_array_diss
+colors = ['#FF0000', '#00FF00', '#0000FF', '#FFFF00']  # Red, Green, Blue, Yellow
+custom_cmap = LinearSegmentedColormap.from_list('custom_cmap', colors)
+plt.imshow(count_array, aspect='auto', cmap=custom_cmap,
+           extent=(np.min(x), np.max(x), np.max(z), np.min(z)), vmin=1, vmax=4)
+plt.gca().invert_yaxis()
+plt.xlabel(r'Range (km)')
+plt.ylabel('Height (km)')
+plt.title(f'Dominant TKE Production Term')
+cbar = plt.colorbar()
+cbar.set_ticks([1, 2, 3, 4])
+cbar.set_ticklabels(['Shear', 'Buoyancy', 'Advection', 'Dissipation'])
+# plt.show()
+plt.savefig(f'//uahdata/rstor/aes655_project/max_occurrence.png')
+plt.close('all')
 
 plt.imshow(data_avg_shear, aspect='auto', cmap='rainbow',
            extent=(np.min(x), np.max(x), np.max(z), np.min(z)))
@@ -187,4 +214,37 @@ for i in range(data_shear.shape[0]):
     plt.colorbar(label=r'TKE ($\frac{m^2}{s^2}$)')
     # plt.show()
     plt.savefig(f'//uahdata/rstor/aes655_project/ke_hourly/ke_{i}.png')
+    plt.close('all')
+
+    count_array_shear = (
+            (np.abs(data_shear[i, :, :]) > np.abs(data_buoy[i, :, :])) &
+            (np.abs(data_shear[i, :, :]) > np.abs(data_diss[i, :, :]))
+            & (np.abs(data_shear[i, :, :]) > np.abs(data_adv[i, :, :]))).astype('int')
+    count_array_buoy = (
+            (np.abs(data_buoy[i, :, :]) > np.abs(data_shear[i, :, :])) &
+            (np.abs(data_buoy[i, :, :]) > np.abs(data_diss[i, :, :]))
+            & (np.abs(data_buoy[i, :, :]) > np.abs(data_adv[i, :, :]))).astype('int')
+    count_array_buoy[count_array_buoy == 1] = 2
+    count_array_adv = ((np.abs(data_adv[i, :, :]) > np.abs(data_buoy[i, :, :])) &
+                       (np.abs(data_adv[i, :, :]) > np.abs(data_diss[i, :, :]))
+                       & (np.abs(data_adv[i, :, :]) > np.abs(data_shear[i, :, :]))).astype('int')
+    count_array_adv[count_array_adv == 1] = 3
+    count_array_diss = (
+            (np.abs(data_diss[i, :, :]) > np.abs(data_buoy[i, :, :])) &
+            (np.abs(data_diss[i, :, :]) > np.abs(data_shear[i, :, :]))
+            & (np.abs(data_diss[i, :, :]) > np.abs(data_adv[i, :, :]))).astype('int')
+    count_array_diss[count_array_diss == 1] = 4
+    count_array = count_array_shear + count_array_buoy + count_array_adv + count_array_diss
+
+    plt.imshow(count_array, aspect='auto', cmap=custom_cmap,
+               extent=(np.min(x), np.max(x), np.max(z), np.min(z)), vmin=1, vmax=4)
+    plt.gca().invert_yaxis()
+    plt.xlabel(r'Range (km)')
+    plt.ylabel('Height (km)')
+    plt.title(f'Dominant TKE Production Term at {i} Timestep')
+    cbar = plt.colorbar()
+    cbar.set_ticks([1, 2, 3, 4])
+    cbar.set_ticklabels(['Shear', 'Buoya.', 'Adv.', 'Diss.'])
+    # plt.show()
+    plt.savefig(f'//uahdata/rstor/aes655_project/max_occurrence.png')
     plt.close('all')
