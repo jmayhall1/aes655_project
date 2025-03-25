@@ -2,249 +2,112 @@
 """
 @author: John Mark Mayhall
 """
-import glob
 import os
 
 import matplotlib.pyplot as plt
 import netCDF4
 import numpy as np
-import pandas as pd
 from matplotlib.colors import LinearSegmentedColormap
 
-path = '//uahdata/rstor/aes655_project/cm1out_azimavg_s.nc'
+# Define the file path
+path = "//uahdata/rstor/aes655_project/cm1out_azimavg_s.nc"
+output_dir = "//uahdata/rstor/aes655_project/"
 
-# data = netCDF4.Dataset(path).variables
-z = np.array(netCDF4.Dataset(path).variables.get('lev'))
-x = np.array(netCDF4.Dataset(path).variables.get('lon'))
-bottom = np.where(z > 10)[0][0]
-z = z[bottom:]
-data_shear = np.array(netCDF4.Dataset(path).variables.get('qshear'))[:, bottom:, 0, :]
-data_buoy = np.array(netCDF4.Dataset(path).variables.get('qbuoy'))[:, bottom:, 0, :]
-data_diss = np.array(netCDF4.Dataset(path).variables.get('qdiss'))[:, bottom:, 0, :]
-data_change = np.array(netCDF4.Dataset(path).variables.get('dqke'))[:, bottom:, 0, :]
-data_adv = np.array(netCDF4.Dataset(path).variables.get('qke_adv'))[:, bottom:, 0, :]
-data_ke = np.array(netCDF4.Dataset(path).variables.get('qke'))[:, bottom:, 0, :]
-data_vert = np.array(netCDF4.Dataset(path).variables.get('qwt'))[:, bottom:, 0, :]
+# Load dataset
+with netCDF4.Dataset(path) as ds:
+    z = np.array(ds.variables['lev'])
+    x = np.array(ds.variables['lon'])
+    bottom = np.where(z > 10)[0][0]
+    z = z[bottom:]
 
-data_avg_shear = np.nanmean(data_shear, axis=0)
-data_avg_buoy = np.nanmean(data_buoy, axis=0)
-data_avg_diss = np.nanmean(data_diss, axis=0)
-data_avg_change = np.nanmean(data_change, axis=0)
-data_avg_adv = np.nanmean(data_adv, axis=0)
-data_avg_ke = np.nanmean(data_ke, axis=0)
-data_avg_vert = np.nanmean(data_vert, axis=0)
+    # Extract and slice data
+    variables = ['qshear', 'qbuoy', 'qdiss', 'dqke', 'qke_adv', 'qke', 'qwt']
+    data = {var: np.array(ds.variables[var])[:, bottom:, 0, :] for var in variables}
 
-count_array_shear = ((np.abs(data_avg_shear) > np.abs(data_avg_buoy)) & (np.abs(data_avg_shear) > np.abs(data_avg_diss))
-                     & (np.abs(data_avg_shear) > np.abs(data_avg_adv))).astype('int')
-count_array_buoy = ((np.abs(data_avg_buoy) > np.abs(data_avg_shear)) & (np.abs(data_avg_buoy) > np.abs(data_avg_diss))
-                    & (np.abs(data_avg_buoy) > np.abs(data_avg_adv))).astype('int')
-count_array_buoy[count_array_buoy == 1] = 2
-count_array_adv = ((np.abs(data_avg_adv) > np.abs(data_avg_buoy)) & (np.abs(data_avg_adv) > np.abs(data_avg_diss))
-                   & (np.abs(data_avg_adv) > np.abs(data_avg_shear))).astype('int')
-count_array_adv[count_array_adv == 1] = 3
-count_array_diss = ((np.abs(data_avg_diss) > np.abs(data_avg_buoy)) & (np.abs(data_avg_diss) > np.abs(data_avg_shear))
-                    & (np.abs(data_avg_diss) > np.abs(data_avg_adv))).astype('int')
-count_array_diss[count_array_diss == 1] = 4
-count_array = count_array_shear + count_array_buoy + count_array_adv + count_array_diss
+# Compute average values
+avg_data = {key: np.nanmean(val, axis=0) for key, val in data.items()}
+
+
+# Function to plot data
+def plot_and_save(data_func: np.array, title: str, filename: str, cmap='rainbow',
+                  cbar_label='TKE per Second ($m^2/s^3$)') -> None:
+    """
+    Function for plotting arrays.
+    :param data_func: Array to be plotted.
+    :param title: Title of plot.
+    :param filename: Filename of plot being saved.
+    :param cmap: Colormap of plot.
+    :param cbar_label: Label of the colorbar.
+    :return: Nothing.
+    """
+    plt.imshow(data_func, aspect='auto', cmap=cmap, extent=(np.min(x), np.max(x), np.max(z), np.min(z)))
+    plt.gca().invert_yaxis()
+    plt.xlabel('Range (km)')
+    plt.ylabel('Height (km)')
+    plt.title(title)
+    plt.colorbar(label=cbar_label)
+    plt.savefig(os.path.join(output_dir, filename))
+    plt.close()
+
+
+# Plot averaged data
+plot_and_save(avg_data['qshear'], 'Average TKE Shear Production', 'shear_avg.png')
+plot_and_save(avg_data['qbuoy'], 'Average TKE Buoyancy Production', 'buoy_avg.png')
+plot_and_save(avg_data['qdiss'], 'Average TKE Dissipation', 'diss_avg.png')
+plot_and_save(avg_data['dqke'], 'Average TKE Change', 'change_avg.png')
+plot_and_save(avg_data['qke_adv'], 'Average TKE Advection', 'adv_avg.png')
+plot_and_save(avg_data['qwt'], 'Average TKE Vertical Transport', 'vert_avg.png')
+plot_and_save(avg_data['qke'], 'Average TKE', 'ke_avg.png', cbar_label='TKE ($m^2/s^2$)')
+
+# Create colormap for dominant TKE production term
 colors = ['#FF0000', '#00FF00', '#0000FF', '#FFFF00']  # Red, Green, Blue, Yellow
 custom_cmap = LinearSegmentedColormap.from_list('custom_cmap', colors)
-plt.imshow(count_array, aspect='auto', cmap=custom_cmap,
-           extent=(np.min(x), np.max(x), np.max(z), np.min(z)), vmin=1, vmax=4)
+
+
+def compute_dominant_term(*terms):
+    """
+    Calculate dominate production term
+    :param terms: Terms needed for dominant term calculation.
+    :return: Array with integers representing the max term.
+    """
+    abs_terms = [np.abs(term) for term in terms]
+    dominant = np.argmax(abs_terms, axis=0) + 1  # Add 1 to match colormap labels
+    return dominant
+
+
+dominant_term = compute_dominant_term(avg_data['qshear'], avg_data['qbuoy'], avg_data['qke_adv'], avg_data['qdiss'])
+
+# Plot dominant TKE term
+plt.imshow(dominant_term, aspect='auto', cmap=custom_cmap, extent=(np.min(x), np.max(x), np.max(z), np.min(z)), vmin=1,
+           vmax=4)
 plt.gca().invert_yaxis()
-plt.xlabel(r'Range (km)')
+plt.xlabel('Range (km)')
 plt.ylabel('Height (km)')
-plt.title(f'Dominant TKE Production Term')
+plt.title('Dominant TKE Production Term')
 cbar = plt.colorbar()
 cbar.set_ticks([1, 2, 3, 4])
 cbar.set_ticklabels(['Shear', 'Buoyancy', 'Advection', 'Dissipation'])
-# plt.show()
-plt.savefig(f'//uahdata/rstor/aes655_project/max_occurrence.png')
-plt.close('all')
+plt.savefig(os.path.join(output_dir, 'max_occurrence.png'))
+plt.close()
 
-plt.imshow(data_avg_shear, aspect='auto', cmap='rainbow',
-           extent=(np.min(x), np.max(x), np.max(z), np.min(z)))
-plt.gca().invert_yaxis()
-plt.ylabel('Height (km)')
-plt.xlabel(r'Range (km)')
-plt.title(f'Average TKE Shear Production')
-plt.colorbar(label=r'TKE per Second ($\frac{m^2}{s^3}$)')
-# plt.show()
-plt.savefig(f'//uahdata/rstor/aes655_project/shear_avg.png')
-plt.close('all')
+# Loop through timesteps
+hourly_dirs = {var: os.path.join(output_dir, f'{var}_hourly') for var in variables}
+for directory in hourly_dirs.values():
+    os.makedirs(directory, exist_ok=True)
 
-plt.imshow(data_avg_buoy, aspect='auto', cmap='rainbow',
-           extent=(np.min(x), np.max(x), np.max(z), np.min(z)))
-plt.gca().invert_yaxis()
-plt.ylabel('Height (km)')
-plt.xlabel(r'Range (km)')
-plt.title(f'Average TKE Buoyancy Production')
-plt.colorbar(label=r'TKE per Second ($\frac{m^2}{s^3}$)')
-# plt.show()
-plt.savefig(f'//uahdata/rstor/aes655_project/buoy_avg.png')
-plt.close('all')
+for i in range(data['qshear'].shape[0]):
+    for var in variables:
+        plot_and_save(data[var][i], f'TKE {var} at {i} Timestep', os.path.join(hourly_dirs[var], f'{var}_{i}.png'))
 
-plt.imshow(data_avg_diss, aspect='auto', cmap='rainbow',
-           extent=(np.min(x), np.max(x), np.max(z), np.min(z)))
-plt.gca().invert_yaxis()
-plt.ylabel('Height (km)')
-plt.xlabel(r'Range (km)')
-plt.title(f'Average TKE Dissipation Production')
-plt.colorbar(label=r'TKE per Second ($\frac{m^2}{s^3}$)')
-# plt.show()
-plt.savefig(f'//uahdata/rstor/aes655_project/diss_avg.png')
-plt.close('all')
-
-plt.imshow(data_avg_change, aspect='auto', cmap='rainbow',
-           extent=(np.min(x), np.max(x), np.max(z), np.min(z)))
-plt.gca().invert_yaxis()
-plt.ylabel('Height (km)')
-plt.xlabel(r'Range (km)')
-plt.title(f'Average TKE Change')
-plt.colorbar(label=r'TKE per Second ($\frac{m^2}{s^3}$)')
-# plt.show()
-plt.savefig(f'//uahdata/rstor/aes655_project/change_avg.png')
-plt.close('all')
-
-plt.imshow(data_avg_adv, aspect='auto', cmap='rainbow',
-           extent=(np.min(x), np.max(x), np.max(z), np.min(z)))
-plt.gca().invert_yaxis()
-plt.ylabel('Height (km)')
-plt.xlabel(r'Range (km)')
-plt.title(f'Average TKE Advection')
-plt.colorbar(label=r'TKE per Second ($\frac{m^2}{s^3}$)')
-# plt.show()
-plt.savefig(f'//uahdata/rstor/aes655_project/adv_avg.png')
-plt.close('all')
-
-plt.imshow(data_avg_vert, aspect='auto', cmap='rainbow',
-           extent=(np.min(x), np.max(x), np.max(z), np.min(z)))
-plt.gca().invert_yaxis()
-plt.ylabel('Height (km)')
-plt.xlabel(r'Range (km)')
-plt.title(f'Average TKE Vertical Transport')
-plt.colorbar(label=r'TKE per Second ($\frac{m^2}{s^3}$)')
-# plt.show()
-plt.savefig(f'//uahdata/rstor/aes655_project/vert_avg.png')
-plt.close('all')
-
-plt.imshow(data_avg_ke, aspect='auto', cmap='rainbow',
-           extent=(np.min(x), np.max(x), np.max(z), np.min(z)))
-plt.gca().invert_yaxis()
-plt.ylabel('Height (km)')
-plt.xlabel(r'Range (km)')
-plt.title(f'Average TKE')
-plt.colorbar(label=r'TKE ($\frac{m^2}{s^2}$)')
-# plt.show()
-plt.savefig(f'//uahdata/rstor/aes655_project/ke_avg.png')
-plt.close('all')
-
-for i in range(data_shear.shape[0]):
-    plt.imshow(data_shear[i, :, :], aspect='auto', cmap='rainbow',
-               extent=(np.min(x), np.max(x), np.max(z), np.min(z)))
+    dominant_term = compute_dominant_term(data['qshear'][i], data['qbuoy'][i], data['qke_adv'][i], data['qdiss'][i])
+    plt.imshow(dominant_term, aspect='auto', cmap=custom_cmap, extent=(np.min(x), np.max(x), np.max(z), np.min(z)),
+               vmin=1, vmax=4)
     plt.gca().invert_yaxis()
-    plt.ylabel('Height (km)')
-    plt.xlabel(r'Range (km)')
-    plt.title(f'TKE Shear Production at {i} Timestep')
-    plt.colorbar(label=r'TKE per Second ($\frac{m^2}{s^3}$)')
-    # plt.show()
-    plt.savefig(f'//uahdata/rstor/aes655_project/shear_hourly/shear_{i}.png')
-    plt.close('all')
-
-    plt.imshow(data_buoy[i, :, :], aspect='auto', cmap='rainbow',
-               extent=(np.min(x), np.max(x), np.max(z), np.min(z)))
-    plt.gca().invert_yaxis()
-    plt.ylabel('Height (km)')
-    plt.xlabel(r'Range (km)')
-    plt.title(f'TKE Buoyancy Production at {i} Timestep')
-    plt.colorbar(label=r'TKE per Second ($\frac{m^2}{s^3}$)')
-    # plt.show()
-    plt.savefig(f'//uahdata/rstor/aes655_project/buoy_hourly/buoy_{i}.png')
-    plt.close('all')
-
-    plt.imshow(data_diss[i, :, :], aspect='auto', cmap='rainbow',
-               extent=(np.min(x), np.max(x), np.max(z), np.min(z)))
-    plt.gca().invert_yaxis()
-    plt.ylabel('Height (km)')
-    plt.xlabel(r'Range (km)')
-    plt.title(f'TKE Dissipation Production at {i} Timestep')
-    plt.colorbar(label=r'TKE per Second ($\frac{m^2}{s^3}$)')
-    # plt.show()
-    plt.savefig(f'//uahdata/rstor/aes655_project/diss_hourly/diss_{i}.png')
-    plt.close('all')
-
-    plt.imshow(data_change[i, :, :], aspect='auto', cmap='rainbow',
-               extent=(np.min(x), np.max(x), np.max(z), np.min(z)))
-    plt.gca().invert_yaxis()
-    plt.ylabel('Height (km)')
-    plt.xlabel(r'Range (km)')
-    plt.title(f'TKE Change at {i} Timestep')
-    plt.colorbar(label=r'TKE per Second ($\frac{m^2}{s^3}$)')
-    # plt.show()
-    plt.savefig(f'//uahdata/rstor/aes655_project/change_hourly/change_{i}.png')
-    plt.close('all')
-
-    plt.imshow(data_adv[i, :, :], aspect='auto', cmap='rainbow',
-               extent=(np.min(x), np.max(x), np.max(z), np.min(z)))
-    plt.gca().invert_yaxis()
-    plt.ylabel('Height (km)')
-    plt.xlabel(r'Range (km)')
-    plt.title(f'TKE Advection at {i} Timestep')
-    plt.colorbar(label=r'TKE per Second ($\frac{m^2}{s^3}$)')
-    # plt.show()
-    plt.savefig(f'//uahdata/rstor/aes655_project/adv_hourly/adv_{i}.png')
-    plt.close('all')
-
-    plt.imshow(data_vert[i, :, :], aspect='auto', cmap='rainbow',
-               extent=(np.min(x), np.max(x), np.max(z), np.min(z)))
-    plt.gca().invert_yaxis()
-    plt.ylabel('Height (km)')
-    plt.xlabel(r'Range (km)')
-    plt.title(f'TKE Vertical Transport at {i} Timestep')
-    plt.colorbar(label=r'TKE per Second ($\frac{m^2}{s^3}$)')
-    # plt.show()
-    plt.savefig(f'//uahdata/rstor/aes655_project/vert_hourly/vert_{i}.png')
-    plt.close('all')
-
-    plt.imshow(data_ke[i, :, :], aspect='auto', cmap='rainbow',
-               extent=(np.min(x), np.max(x), np.max(z), np.min(z)))
-    plt.gca().invert_yaxis()
-    plt.ylabel('Height (km)')
-    plt.xlabel(r'Range (km)')
-    plt.title(f'TKE at {i} Timestep')
-    plt.colorbar(label=r'TKE ($\frac{m^2}{s^2}$)')
-    # plt.show()
-    plt.savefig(f'//uahdata/rstor/aes655_project/ke_hourly/ke_{i}.png')
-    plt.close('all')
-
-    count_array_shear = (
-            (np.abs(data_shear[i, :, :]) > np.abs(data_buoy[i, :, :])) &
-            (np.abs(data_shear[i, :, :]) > np.abs(data_diss[i, :, :]))
-            & (np.abs(data_shear[i, :, :]) > np.abs(data_adv[i, :, :]))).astype('int')
-    count_array_buoy = (
-            (np.abs(data_buoy[i, :, :]) > np.abs(data_shear[i, :, :])) &
-            (np.abs(data_buoy[i, :, :]) > np.abs(data_diss[i, :, :]))
-            & (np.abs(data_buoy[i, :, :]) > np.abs(data_adv[i, :, :]))).astype('int')
-    count_array_buoy[count_array_buoy == 1] = 2
-    count_array_adv = ((np.abs(data_adv[i, :, :]) > np.abs(data_buoy[i, :, :])) &
-                       (np.abs(data_adv[i, :, :]) > np.abs(data_diss[i, :, :]))
-                       & (np.abs(data_adv[i, :, :]) > np.abs(data_shear[i, :, :]))).astype('int')
-    count_array_adv[count_array_adv == 1] = 3
-    count_array_diss = (
-            (np.abs(data_diss[i, :, :]) > np.abs(data_buoy[i, :, :])) &
-            (np.abs(data_diss[i, :, :]) > np.abs(data_shear[i, :, :]))
-            & (np.abs(data_diss[i, :, :]) > np.abs(data_adv[i, :, :]))).astype('int')
-    count_array_diss[count_array_diss == 1] = 4
-    count_array = count_array_shear + count_array_buoy + count_array_adv + count_array_diss
-
-    plt.imshow(count_array, aspect='auto', cmap=custom_cmap,
-               extent=(np.min(x), np.max(x), np.max(z), np.min(z)), vmin=1, vmax=4)
-    plt.gca().invert_yaxis()
-    plt.xlabel(r'Range (km)')
+    plt.xlabel('Range (km)')
     plt.ylabel('Height (km)')
     plt.title(f'Dominant TKE Production Term at {i} Timestep')
     cbar = plt.colorbar()
     cbar.set_ticks([1, 2, 3, 4])
-    cbar.set_ticklabels(['Shear', 'Buoya.', 'Adv.', 'Diss.'])
-    # plt.show()
-    plt.savefig(f'//uahdata/rstor/aes655_project/max_occurrence.png')
-    plt.close('all')
+    cbar.set_ticklabels(['Shear', 'Buoyancy', 'Advection', 'Dissipation'])
+    plt.savefig(os.path.join(output_dir, 'occ_hourly', f'max_occurrence_{i}.png'))
+    plt.close()

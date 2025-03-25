@@ -2,128 +2,132 @@
 """
 @author: John Mark Mayhall
 """
-import glob
 import os
 
 import matplotlib.pyplot as plt
+import metpy.calc as mpcalc
 import netCDF4
 import numpy as np
-import pandas as pd
-from mayavi import mlab
-import metpy.calc as mpcalc
 
-# theta_prime = mpcalc.first_derivative(vpt, x=z)
-# u_prime = mpcalc.first_derivative(uz, x=z)
-# v_prime = mpcalc.first_derivative(vz, x=z)
+# Define file paths
+base_path = '//uahdata/rstor/aes655_project/'
+output_path = os.path.join(base_path, 'Rb_hourly')
+os.makedirs(output_path, exist_ok=True)
 
-path = '//uahdata/rstor/aes655_project/cm1out_azimavg_s.nc'
+# Load NetCDF data efficiently
+ncfile = netCDF4.Dataset(os.path.join(base_path, 'cm1out_azimavg_s.nc'))
+z = np.array(ncfile.variables['lev'])
+x = np.array(ncfile.variables['lon'])
+u = np.array(ncfile.variables['u'])[:, :, 0, :]
+v = np.array(ncfile.variables['v'])[:, :, 0, :]
+thv = np.array(ncfile.variables['thv'])[:, :, 0, :]
+ncfile.close()  # Close file after loading data
 
-# data = netCDF4.Dataset(path).variables
-z = np.array(netCDF4.Dataset(path).variables.get('lev'))
-delta_z = np.diff(z)
-delta_z = np.insert(delta_z, 0, z[0])
-x = np.array(netCDF4.Dataset(path).variables.get('lon'))
-u = np.array(netCDF4.Dataset(path).variables.get('u'))[:, :, 0, :]
-v = np.array(netCDF4.Dataset(path).variables.get('v'))[:, :, 0, :]
-thv = np.array(netCDF4.Dataset(path).variables.get('thv'))[:, :, 0, :]
+# Compute vertical differences
+delta_z = np.diff(z, prepend=z[0])
+
+# Compute vertical derivatives using MetPy
 delta_u = mpcalc.first_derivative(u, axis=1, x=z)
 delta_v = mpcalc.first_derivative(v, axis=1, x=z)
 delta_thv = mpcalc.first_derivative(thv, axis=1, x=z)
 
-bottom = np.where(z > 10)[0][0]
-z2d = np.tile(z, (x.shape[0], 1)).T
-z3d = np.tile(z, (u.shape[0], np.shape(z2d)[1], 1))
-z = z3d.swapaxes(1, 2)
-z = np.multiply(z[:, bottom:, :], 1000)
-delta_z2d = np.tile(delta_z, (x.shape[0], 1)).T
-delta_z3d = np.tile(delta_z, (u.shape[0], np.shape(z2d)[1], 1))
-delta_z = delta_z3d.swapaxes(1, 2)
-delta_z = np.multiply(delta_z[:, bottom:, :], 1000)
-u = u[:, bottom:, :]
-v = v[:, bottom:, :]
-thv = thv[:, bottom:, :]
-delta_u = delta_u[:, bottom:, :]
-delta_v = delta_v[:, bottom:, :]
-delta_thv = delta_thv[:, bottom:, :]
+# Find the bottom index where z > 10
+bottom = np.searchsorted(z, 10)
 
-R = np.array(9.81 * delta_z * delta_thv / (thv * (delta_u ** 2 + delta_v ** 2)))
-R[R == np.inf] = np.nan
+# Trim arrays to remove unnecessary levels
+z = np.tile(z[:, np.newaxis], (1, x.shape[0]))[np.newaxis, :, :]
+z = np.repeat(z, u.shape[0], axis=0)[:, bottom:, :] * 1000
+
+delta_z = np.tile(delta_z[:, np.newaxis], (1, x.shape[0]))[np.newaxis, :, :]
+delta_z = np.repeat(delta_z, u.shape[0], axis=0)[:, bottom:, :] * 1000
+
+u, v, thv = u[:, bottom:, :], v[:, bottom:, :], thv[:, bottom:, :]
+delta_u, delta_v, delta_thv = delta_u[:, bottom:, :], delta_v[:, bottom:, :], delta_thv[:, bottom:, :]
+
+# Compute Richardson number
+R = (9.81 * delta_z * delta_thv) / (thv * (delta_u ** 2 + delta_v ** 2))
+R[np.isinf(R)] = np.nan
+
+# Compute the average Richardson number
 R_avg = np.nanmean(R, axis=0)
 
+# Save the average Richardson number plot
+plt.figure(figsize=(8, 6))
 plt.imshow(R_avg, aspect='auto', cmap='rainbow', vmin=-1, vmax=10,
            extent=(np.min(x), np.max(x), np.max(z) / 1000, np.min(z) / 1000))
 plt.gca().invert_yaxis()
 plt.ylabel('Height (km)')
-plt.xlabel(r'Range (km)')
-plt.title(f'Average Richardson Number')
+plt.xlabel('Range (km)')
+plt.title('Average Richardson Number')
 plt.colorbar(label=r'$R_b$ (unitless)')
-# plt.show()
-plt.savefig(f'//uahdata/rstor/aes655_project/Rb_avg.png')
-plt.close('all')
+plt.savefig(os.path.join(base_path, 'Rb_avg.png'))
+plt.close()
 
-time = []
-minimum_value = []
-minimum_loc = np.zeros((30, 100))
-loc025 = np.zeros((30, 100))
-loc1 = np.zeros((30, 100))
-for i in range(R.shape[0]):
-    time.append(i)
-    minimum_value.append(np.nanmin(R[i, :, :]))
-    current_array = R[i, :, :] == np.nanmin(R[i, :, :])
-    array025 = R[i, :, :] < 0.25
-    array1 = R[i, :, :] < 1
-    minimum_loc = np.add(minimum_loc, current_array.astype(int))
-    loc025 = np.add(loc025, array025.astype(int))
-    loc1 = np.add(loc1, array1.astype(int))
-    plt.imshow(R[i, :, :], aspect='auto', cmap='rainbow', vmin=-1, vmax=1,
+# Initialize tracking arrays
+num_timesteps, zdim, xdim = R.shape
+minimum_loc = np.zeros((zdim, xdim), dtype=int)
+loc025 = np.zeros((zdim, xdim), dtype=int)
+loc1 = np.zeros((zdim, xdim), dtype=int)
+
+time = np.arange(num_timesteps)
+minimum_values = np.nanmin(R, axis=(1, 2))
+
+# Loop through timesteps for visualization and tracking
+for i in range(num_timesteps):
+    Ri = R[i, :, :]
+
+    # Identify critical regions
+    minimum_loc += (Ri == np.nanmin(Ri)).astype(int)
+    loc025 += (Ri < 0.25).astype(int)
+    loc1 += (Ri < 1).astype(int)
+
+    # Save individual timestep plot
+    plt.figure(figsize=(8, 6))
+    plt.imshow(Ri, aspect='auto', cmap='rainbow', vmin=-1, vmax=1,
                extent=(np.min(x), np.max(x), np.max(z) / 1000, np.min(z) / 1000))
     plt.gca().invert_yaxis()
     plt.ylabel('Height (km)')
-    plt.xlabel(r'Range (km)')
-    plt.title(f'$R_b$ at {i} Timestep')
+    plt.xlabel('Range (km)')
+    plt.title(f'$R_b$ at Timestep {i}')
     plt.colorbar(label=r'$R_b$ (unitless)')
-    # plt.show()
-    plt.savefig(f'//uahdata/rstor/aes655_project/Rb_hourly/Rb_{i}.png')
-    plt.close('all')
+    plt.savefig(os.path.join(output_path, f'Rb_{i}.png'))
+    plt.close()
 
-plt.plot(time, minimum_value)
+# Plot minimum Richardson number over time
+plt.figure(figsize=(8, 6))
+plt.plot(time, minimum_values, marker='o', linestyle='-')
 plt.ylabel('$R_b$')
-plt.xlabel(r'Time Step')
+plt.xlabel('Time Step')
 plt.ylim(0, 2)
-plt.title(f' Minimum $R_b$ vs Time')
-# plt.show()
-plt.savefig(f'//uahdata/rstor/aes655_project/Rb_min.png')
-plt.close('all')
+plt.title('Minimum $R_b$ vs Time')
+plt.savefig(os.path.join(base_path, 'Rb_min.png'))
+plt.close()
 
-plt.imshow(minimum_loc, aspect='auto', cmap='rainbow', vmin=0,
-           extent=(np.min(x), np.max(x), np.max(z) / 1000, np.min(z) / 1000))
-plt.gca().invert_yaxis()
-plt.ylabel('Height (km)')
-plt.xlabel(r'Range (km)')
-plt.title(f'Location of Minimum $R_b$')
-plt.colorbar(label=r'# of Minimum $R_b$ Occurrences')
-# plt.show()
-plt.savefig(f'//uahdata/rstor/aes655_project/minRb_loc.png')
-plt.close('all')
 
-plt.imshow(loc025, aspect='auto', cmap='rainbow', vmin=0,
-           extent=(np.min(x), np.max(x), np.max(z) / 1000, np.min(z) / 1000))
-plt.gca().invert_yaxis()
-plt.ylabel('Height (km)')
-plt.xlabel(r'Range (km)')
-plt.title(f'Location of $R_b$ < 0.25')
-plt.colorbar(label=r'# of $R_b$ < 0.25 Occurrences')
-# plt.show()
-plt.savefig(f'//uahdata/rstor/aes655_project/025Rb_loc.png')
-plt.close('all')
+# Function to save occurrence heatmaps
+def save_heatmap(data: np.array, title: str, filename: str, colorbar_label: str) -> None:
+    """
+    Function to plot occurrence heatmaps.
+    :param data: Data to be used for plotting
+    :param title: Title of the created plot
+    :param filename: Saved plot's filename
+    :param colorbar_label: Colorbar Label
+    :return: Nothing
+    """
+    plt.figure(figsize=(8, 6))
+    plt.imshow(data, aspect='auto', cmap='rainbow', vmin=0,
+               extent=(np.min(x), np.max(x), np.max(z) / 1000, np.min(z) / 1000))
+    plt.gca().invert_yaxis()
+    plt.ylabel('Height (km)')
+    plt.xlabel('Range (km)')
+    plt.title(title)
+    plt.colorbar(label=colorbar_label)
+    plt.savefig(os.path.join(base_path, filename))
+    plt.close()
 
-plt.imshow(loc1, aspect='auto', cmap='rainbow', vmin=0,
-           extent=(np.min(x), np.max(x), np.max(z) / 1000, np.min(z) / 1000))
-plt.gca().invert_yaxis()
-plt.ylabel('Height (km)')
-plt.xlabel(r'Range (km)')
-plt.title(f'Location of $R_b$ < 1')
-plt.colorbar(label=r'# of $R_b$ < 1 Occurrences')
-# plt.show()
-plt.savefig(f'//uahdata/rstor/aes655_project/1Rb_loc.png')
-plt.close('all')
+
+# Save occurrence heatmaps
+save_heatmap(minimum_loc, 'Location of Minimum $R_b$', 'minRb_loc.png', r'# of Minimum $R_b$ Occurrences')
+save_heatmap(loc025, 'Location of $R_b$ < 0.25', '025Rb_loc.png', r'# of $R_b$ < 0.25 Occurrences')
+save_heatmap(loc1, 'Location of $R_b$ < 1', '1Rb_loc.png', r'# of $R_b$ < 1 Occurrences')
+
