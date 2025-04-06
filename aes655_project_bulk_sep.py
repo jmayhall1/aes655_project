@@ -25,6 +25,7 @@ def save_heatmap(data: np.array, title: str, filename: str, colorbar_label: str)
                extent=(np.min(x), np.max(x), np.max(z) / 1000, np.min(z) / 1000))
     plt.gca().invert_yaxis()
     plt.ylabel('Height (km)')
+    plt.yticks(ticks=np.arange(10, 21, 2))
     plt.xlabel('Range (km)')
     plt.title(title)
     plt.colorbar(label=colorbar_label)
@@ -71,29 +72,31 @@ if __name__ == "__main__":
     postri_delta_v = mpcalc.first_derivative(postri_v, axis=1, x=z)
     postri_delta_thv = mpcalc.first_derivative(postri_thv, axis=1, x=z)
 
-    # Find the bottom index where z > 10
-    bottom = np.searchsorted(z, 10)
+    bottom = np.searchsorted(z, 10) - 1  # More efficient than np.where(z > 10)[0][0]
+    top = np.searchsorted(z, 20) + 1
 
     # Trim arrays to remove unnecessary levels
     z = np.tile(z[:, np.newaxis], (1, x.shape[0]))[np.newaxis, :, :]
-    z = np.repeat(z, preri_u.shape[0], axis=0)[:, bottom:, :] * 1000
+    z = np.repeat(z, preri_u.shape[0], axis=0)[:, bottom: top, :] * 1000
 
     preri_delta_z = np.tile(delta_z[:, np.newaxis], (1, x.shape[0]))[np.newaxis, :, :]
-    preri_delta_z = np.repeat(preri_delta_z, preri_u.shape[0], axis=0)[:, bottom:, :] * 1000
+    preri_delta_z = np.repeat(preri_delta_z, preri_u.shape[0], axis=0)[:, bottom: top, :] * 1000
     ri_delta_z = np.tile(delta_z[:, np.newaxis], (1, x.shape[0]))[np.newaxis, :, :]
-    ri_delta_z = np.repeat(ri_delta_z, ri_u.shape[0], axis=0)[:, bottom:, :] * 1000
+    ri_delta_z = np.repeat(ri_delta_z, ri_u.shape[0], axis=0)[:, bottom: top, :] * 1000
     postri_delta_z = np.tile(delta_z[:, np.newaxis], (1, x.shape[0]))[np.newaxis, :, :]
-    postri_delta_z = np.repeat(postri_delta_z, postri_u.shape[0], axis=0)[:, bottom:, :] * 1000
+    postri_delta_z = np.repeat(postri_delta_z, postri_u.shape[0], axis=0)[:, bottom: top, :] * 1000
 
-    preri_u, preri_v, preri_thv = preri_u[:, bottom:, :], preri_v[:, bottom:, :], preri_thv[:, bottom:, :]
-    preri_delta_u, preri_delta_v, preri_delta_thv = (preri_delta_u[:, bottom:, :], preri_delta_v[:, bottom:, :],
-                                                     preri_delta_thv[:, bottom:, :])
-    ri_u, ri_v, ri_thv = ri_u[:, bottom:, :], ri_v[:, bottom:, :], ri_thv[:, bottom:, :]
-    ri_delta_u, ri_delta_v, ri_delta_thv = ri_delta_u[:, bottom:, :], ri_delta_v[:, bottom:, :], ri_delta_thv[:,
-                                                                                                 bottom:, :]
-    postri_u, postri_v, postri_thv = postri_u[:, bottom:, :], postri_v[:, bottom:, :], postri_thv[:, bottom:, :]
-    postri_delta_u, postri_delta_v, postri_delta_thv = (postri_delta_u[:, bottom:, :], postri_delta_v[:, bottom:, :],
-                                                        postri_delta_thv[:, bottom:, :])
+    preri_u, preri_v, preri_thv = preri_u[:, bottom: top, :], preri_v[:, bottom: top, :], preri_thv[:, bottom: top, :]
+    preri_delta_u, preri_delta_v, preri_delta_thv = (preri_delta_u[:, bottom: top, :], preri_delta_v[:, bottom: top, :],
+                                                     preri_delta_thv[:, bottom: top, :])
+    ri_u, ri_v, ri_thv = ri_u[:, bottom: top, :], ri_v[:, bottom: top, :], ri_thv[:, bottom: top, :]
+    ri_delta_u, ri_delta_v, ri_delta_thv = ri_delta_u[:, bottom: top, :], ri_delta_v[:, bottom: top, :], ri_delta_thv[:,
+                                                                                                         bottom: top, :]
+    postri_u, postri_v, postri_thv = (postri_u[:, bottom: top, :], postri_v[:, bottom: top, :],
+                                      postri_thv[:, bottom: top, :])
+    postri_delta_u, postri_delta_v, postri_delta_thv = (postri_delta_u[:, bottom: top, :],
+                                                        postri_delta_v[:, bottom: top, :],
+                                                        postri_delta_thv[:, bottom: top, :])
 
     # Compute Richardson number
     preri_R = (9.81 * preri_delta_z * preri_delta_thv) / (preri_thv * (preri_delta_u ** 2 + preri_delta_v ** 2))
@@ -117,6 +120,7 @@ if __name__ == "__main__":
                extent=(np.min(x), np.max(x), np.max(z) / 1000, np.min(z) / 1000))
     plt.gca().invert_yaxis()
     plt.ylabel('Height (km)')
+    plt.yticks(ticks=np.arange(10, 21, 2))
     plt.xlabel('Range (km)')
     plt.title('Average Richardson Number Before RI')
     plt.colorbar(label=r'$R_b$ (unitless)')
@@ -128,6 +132,7 @@ if __name__ == "__main__":
                extent=(np.min(x), np.max(x), np.max(z) / 1000, np.min(z) / 1000))
     plt.gca().invert_yaxis()
     plt.ylabel('Height (km)')
+    plt.yticks(ticks=np.arange(10, 21, 2))
     plt.xlabel('Range (km)')
     plt.title('Average Richardson Number During RI')
     plt.colorbar(label=r'$R_b$ (unitless)')
@@ -138,6 +143,7 @@ if __name__ == "__main__":
     plt.imshow(postri_R_avg, aspect='auto', cmap='rainbow', vmin=-1, vmax=10,
                extent=(np.min(x), np.max(x), np.max(z) / 1000, np.min(z) / 1000))
     plt.gca().invert_yaxis()
+    plt.yticks(ticks=np.arange(10, 21, 2))
     plt.ylabel('Height (km)')
     plt.xlabel('Range (km)')
     plt.title('Average Richardson Number After RI')

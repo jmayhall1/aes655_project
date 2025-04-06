@@ -26,22 +26,22 @@ if __name__ == "__main__":
     # Compute spatial step differences
     delta_x = np.diff(x, prepend=x[0])
 
-    # Find the bottom index where z > 10
-    bottom = np.searchsorted(z, 10)
+    bottom = np.searchsorted(z, 10) - 1  # More efficient than np.where(z > 10)[0][0]
+    top = np.searchsorted(z, 20) + 1
 
     # Reshape arrays efficiently
     original_zdim, xdim = z.shape[0], x.shape[0]
     z3d = np.tile(z[:, np.newaxis], (1, xdim))[np.newaxis, :, :]
-    z3d = np.repeat(z3d, u.shape[0], axis=0)[:, bottom:, :]
+    z3d = np.repeat(z3d, u.shape[0], axis=0)[:, bottom: top, :]
 
     x3d = np.tile(x[np.newaxis, :], (original_zdim, 1))
-    x3d = np.repeat(x3d[np.newaxis, :, :], u.shape[0], axis=0)[:, bottom:, :]
+    x3d = np.repeat(x3d[np.newaxis, :, :], u.shape[0], axis=0)[:, bottom: top, :]
 
     delta_x3d = np.tile(delta_x[np.newaxis, :], (original_zdim, 1))
-    delta_x3d = np.repeat(delta_x3d[np.newaxis, :, :], u.shape[0], axis=0)[:, bottom:, :]
+    delta_x3d = np.repeat(delta_x3d[np.newaxis, :, :], u.shape[0], axis=0)[:, bottom: top, :]
 
     # Slice u and v
-    u, v = u[:, bottom:, :], v[:, bottom:, :]
+    u, v = u[:, bottom: top, :], v[:, bottom: top, :]
 
     # Compute Reynolds number
     speed_sq = u ** 2 + v ** 2
@@ -57,6 +57,7 @@ if __name__ == "__main__":
     plt.imshow(R_avg, aspect='auto', cmap='nipy_spectral', vmin=0,
                extent=(np.min(x3d), np.max(x3d), np.max(z3d), np.min(z3d)))
     plt.gca().invert_yaxis()
+    plt.yticks(ticks=np.arange(10, 21, 2))
     plt.ylabel('Height (km)')
     plt.xlabel('Range (km)')
     plt.title('Average Reynolds Number')
@@ -71,6 +72,7 @@ if __name__ == "__main__":
                    extent=(np.min(x3d), np.max(x3d), np.max(z3d) / 1000, np.min(z3d) / 1000))
         plt.gca().invert_yaxis()
         plt.ylabel('Height (km)')
+        plt.yticks(ticks=np.arange(10, 21, 2))
         plt.xlabel('Range (km)')
         plt.title(f'Reynolds Number at Timestep {i}')
         plt.colorbar(label='Reynolds Number (unitless)')

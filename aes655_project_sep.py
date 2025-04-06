@@ -26,6 +26,7 @@ def plot_and_save(data_func: np.array, title: str, filename: str, cmap='rainbow'
     plt.gca().invert_yaxis()
     plt.xlabel('Range (km)')
     plt.ylabel('Height (km)')
+    plt.yticks(ticks=np.arange(10, 21, 2))
     plt.title(title)
     plt.colorbar(label=cbar_label)
     plt.savefig(os.path.join(output_dir, filename))
@@ -55,14 +56,15 @@ if __name__ == "__main__":
         mtime = (np.array(ds.variables['mtime']) / 3600)[:, 0, 0]
         pre_ri_time = np.where(mtime == 40)[0][0]
         post_ri_time = np.where(mtime == 61)[0][0]
-        bottom = np.where(z > 10)[0][0]
-        z = z[bottom:]
+        bottom = np.searchsorted(z, 10) - 1  # More efficient than np.where(z > 10)[0][0]
+        top = np.searchsorted(z, 20) + 1
+        z = z[bottom: top]
 
         # Extract and slice data
         variables = ['qshear', 'qbuoy', 'qdiss', 'dqke', 'qke_adv', 'qke', 'qwt']
-        preri_data = {var: np.array(ds.variables[var])[:pre_ri_time, bottom:, 0, :] for var in variables}
-        ri_data = {var: np.array(ds.variables[var])[pre_ri_time:post_ri_time, bottom:, 0, :] for var in variables}
-        postri_data = {var: np.array(ds.variables[var])[post_ri_time:, bottom:, 0, :] for var in variables}
+        preri_data = {var: np.array(ds.variables[var])[:pre_ri_time, bottom: top, 0, :] for var in variables}
+        ri_data = {var: np.array(ds.variables[var])[pre_ri_time:post_ri_time, bottom: top, 0, :] for var in variables}
+        postri_data = {var: np.array(ds.variables[var])[post_ri_time:, bottom: top, 0, :] for var in variables}
 
     # Compute average values
     preri_avg_data = {key: np.nanmean(val, axis=0) for key, val in preri_data.items()}
@@ -97,51 +99,57 @@ if __name__ == "__main__":
     plot_and_save(postri_avg_data['qke'], 'Average TKE After RI', 'postri_ke_avg.png', cbar_label='TKE ($m^2/s^2$)')
 
     # Create colormap for dominant TKE production term
-    colors = ['#FF0000', '#00FF00', '#0000FF', '#FFFF00']  # Red, Green, Blue, Yellow
+    colors = ['#FF0000', '#00FF00', '#0000FF', '#FFFF00', '#FF00FF']  # Red, Green, Blue, Yellow, Magenta
     custom_cmap = LinearSegmentedColormap.from_list('custom_cmap', colors)
 
     preri_dominant_term = compute_dominant_term(preri_avg_data['qshear'], preri_avg_data['qbuoy'],
-                                                preri_avg_data['qke_adv'], preri_avg_data['qdiss'])
+                                                preri_avg_data['qke_adv'], preri_avg_data['qdiss'],
+                                                preri_avg_data['qwt'])
     ri_dominant_term = compute_dominant_term(ri_avg_data['qshear'], ri_avg_data['qbuoy'],
-                                             ri_avg_data['qke_adv'], ri_avg_data['qdiss'])
+                                             ri_avg_data['qke_adv'], ri_avg_data['qdiss'],
+                                             preri_avg_data['qwt'])
     postri_dominant_term = compute_dominant_term(postri_avg_data['qshear'], postri_avg_data['qbuoy'],
-                                                 postri_avg_data['qke_adv'], postri_avg_data['qdiss'])
+                                                 postri_avg_data['qke_adv'], postri_avg_data['qdiss'],
+                                                 preri_avg_data['qwt'])
 
     # Plot dominant TKE term
     plt.imshow(preri_dominant_term, aspect='auto', cmap=custom_cmap,
                extent=(np.min(x), np.max(x), np.max(z), np.min(z)),
-               vmin=1, vmax=4)
+               vmin=1, vmax=5)
     plt.gca().invert_yaxis()
     plt.xlabel('Range (km)')
     plt.ylabel('Height (km)')
+    plt.yticks(ticks=np.arange(10, 21, 2))
     plt.title('Dominant TKE Production Term Before RI')
     cbar = plt.colorbar()
-    cbar.set_ticks([1, 2, 3, 4])
-    cbar.set_ticklabels(['Shear', 'Buoyancy', 'Advection', 'Dissipation'])
+    cbar.set_ticks([1, 2, 3, 4, 5])
+    cbar.set_ticklabels(['Shear', 'Buoyancy', 'Advection', 'Dissipation', 'Vert. Transport'])
     plt.savefig(os.path.join(output_dir, 'preri_max_occurrence.png'))
     plt.close()
     # Plot dominant TKE term
     plt.imshow(ri_dominant_term, aspect='auto', cmap=custom_cmap, extent=(np.min(x), np.max(x), np.max(z), np.min(z)),
-               vmin=1, vmax=4)
+               vmin=1, vmax=5)
     plt.gca().invert_yaxis()
     plt.xlabel('Range (km)')
+    plt.yticks(ticks=np.arange(10, 21, 2))
     plt.ylabel('Height (km)')
     plt.title('Dominant TKE Production Term During RI')
     cbar = plt.colorbar()
-    cbar.set_ticks([1, 2, 3, 4])
-    cbar.set_ticklabels(['Shear', 'Buoyancy', 'Advection', 'Dissipation'])
+    cbar.set_ticks([1, 2, 3, 4, 5])
+    cbar.set_ticklabels(['Shear', 'Buoyancy', 'Advection', 'Dissipation', 'Vert. Transport'])
     plt.savefig(os.path.join(output_dir, 'ri_max_occurrence.png'))
     plt.close()
     # Plot dominant TKE term
     plt.imshow(postri_dominant_term, aspect='auto', cmap=custom_cmap,
                extent=(np.min(x), np.max(x), np.max(z), np.min(z)),
-               vmin=1, vmax=4)
+               vmin=1, vmax=5)
     plt.gca().invert_yaxis()
     plt.xlabel('Range (km)')
     plt.ylabel('Height (km)')
+    plt.yticks(ticks=np.arange(10, 21, 2))
     plt.title('Dominant TKE Production Term After RI')
     cbar = plt.colorbar()
-    cbar.set_ticks([1, 2, 3, 4])
-    cbar.set_ticklabels(['Shear', 'Buoyancy', 'Advection', 'Dissipation'])
+    cbar.set_ticks([1, 2, 3, 4, 5])
+    cbar.set_ticklabels(['Shear', 'Buoyancy', 'Advection', 'Dissipation', 'Vert. Transport'])
     plt.savefig(os.path.join(output_dir, 'postri_max_occurrence.png'))
     plt.close()

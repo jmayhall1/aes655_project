@@ -37,6 +37,7 @@ def plot_and_save(data: np.array, title: str, filename: str) -> None:
     plt.gca().invert_yaxis()
     plt.ylabel('Height (km)')
     plt.xlabel('Range (km)')
+    plt.yticks(ticks=np.arange(10, 21, 2))
     plt.title(title)
     plt.colorbar(label='%')
     plt.savefig(f'//uahdata/rstor/aes655_project/not_sep_by_intensity_phase/{filename}.png')
@@ -53,13 +54,14 @@ if __name__ == "__main__":
     # Read variables
     z = np.array(dataset.variables['lev'])
     x = np.array(dataset.variables['lon'])
-    bottom = np.searchsorted(z, 10)  # More efficient than np.where(z > 10)[0][0]
-    z = z[bottom:]
+    bottom = np.searchsorted(z, 10) - 1  # More efficient than np.where(z > 10)[0][0]
+    top = np.searchsorted(z, 20) + 1
+    z = z[bottom:top]
 
     # Extract data slices only once
-    data_shear = np.array(dataset.variables['qshear'])[:, bottom:, 0, :]
-    data_buoy = np.array(dataset.variables['qbuoy'])[:, bottom:, 0, :]
-    data_diss = np.array(dataset.variables['qdiss'])[:, bottom:, 0, :]
+    data_shear = np.array(dataset.variables['qshear'])[:, bottom:top, 0, :]
+    data_buoy = np.array(dataset.variables['qbuoy'])[:, bottom:top, 0, :]
+    data_diss = np.array(dataset.variables['qdiss'])[:, bottom:top, 0, :]
 
     # Compute normalized values
     buoy_shear = safe_divide(data_buoy, data_shear)

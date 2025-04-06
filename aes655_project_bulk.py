@@ -25,6 +25,7 @@ def save_heatmap(data: np.array, title: str, filename: str, colorbar_label: str)
                extent=(np.min(x), np.max(x), np.max(z) / 1000, np.min(z) / 1000))
     plt.gca().invert_yaxis()
     plt.ylabel('Height (km)')
+    plt.yticks(ticks=np.arange(10, 21, 2))
     plt.xlabel('Range (km)')
     plt.title(title)
     plt.colorbar(label=colorbar_label)
@@ -56,18 +57,18 @@ if __name__ == "__main__":
     delta_v = mpcalc.first_derivative(v, axis=1, x=z)
     delta_thv = mpcalc.first_derivative(thv, axis=1, x=z)
 
-    # Find the bottom index where z > 10
-    bottom = np.searchsorted(z, 10)
+    bottom = np.searchsorted(z, 10) - 1  # More efficient than np.where(z > 10)[0][0]
+    top = np.searchsorted(z, 20) + 1
 
     # Trim arrays to remove unnecessary levels
     z = np.tile(z[:, np.newaxis], (1, x.shape[0]))[np.newaxis, :, :]
-    z = np.repeat(z, u.shape[0], axis=0)[:, bottom:, :] * 1000
+    z = np.repeat(z, u.shape[0], axis=0)[:, bottom: top, :] * 1000
 
     delta_z = np.tile(delta_z[:, np.newaxis], (1, x.shape[0]))[np.newaxis, :, :]
-    delta_z = np.repeat(delta_z, u.shape[0], axis=0)[:, bottom:, :] * 1000
+    delta_z = np.repeat(delta_z, u.shape[0], axis=0)[:, bottom: top, :] * 1000
 
-    u, v, thv = u[:, bottom:, :], v[:, bottom:, :], thv[:, bottom:, :]
-    delta_u, delta_v, delta_thv = delta_u[:, bottom:, :], delta_v[:, bottom:, :], delta_thv[:, bottom:, :]
+    u, v, thv = u[:, bottom: top, :], v[:, bottom: top, :], thv[:, bottom: top, :]
+    delta_u, delta_v, delta_thv = delta_u[:, bottom: top, :], delta_v[:, bottom: top, :], delta_thv[:, bottom: top, :]
 
     # Compute Richardson number
     R = (9.81 * delta_z * delta_thv) / (thv * (delta_u ** 2 + delta_v ** 2))
@@ -84,6 +85,7 @@ if __name__ == "__main__":
     plt.gca().invert_yaxis()
     plt.ylabel('Height (km)')
     plt.xlabel('Range (km)')
+    plt.yticks(ticks=np.arange(10, 21, 2))
     plt.title('Average Richardson Number')
     plt.colorbar(label=r'$R_b$ (unitless)')
     plt.savefig(os.path.join(base_path, 'Rb_avg.png'))
@@ -115,6 +117,7 @@ if __name__ == "__main__":
         plt.gca().invert_yaxis()
         plt.ylabel('Height (km)')
         plt.xlabel('Range (km)')
+        plt.yticks(ticks=np.arange(10, 21, 2))
         plt.title(f'$R_b$ at Timestep {i}')
         plt.colorbar(label=r'$R_b$ (unitless)')
         plt.savefig(os.path.join(output_path, f'Rb_{i}.png'))

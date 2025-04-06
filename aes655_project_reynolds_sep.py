@@ -31,8 +31,8 @@ if __name__ == "__main__":
     # Compute spatial step differences
     delta_x = np.diff(x, prepend=x[0])
 
-    # Find the bottom index where z > 10
-    bottom = np.searchsorted(z, 10)
+    bottom = np.searchsorted(z, 10) - 1  # More efficient than np.where(z > 10)[0][0]
+    top = np.searchsorted(z, 20) + 1
 
     # Reshape arrays efficiently
     original_zdim, xdim = z.shape[0], x.shape[0]
@@ -40,20 +40,20 @@ if __name__ == "__main__":
     x3d = np.tile(x[np.newaxis, :], (original_zdim, 1))
     delta_x3d = np.tile(delta_x[np.newaxis, :], (original_zdim, 1))
 
-    preri_z3d = np.repeat(z3d, preri_u.shape[0], axis=0)[:, bottom:, :]
-    preri_x3d = np.repeat(x3d[np.newaxis, :, :], preri_u.shape[0], axis=0)[:, bottom:, :]
-    preri_delta_x3d = np.repeat(delta_x3d[np.newaxis, :, :], preri_u.shape[0], axis=0)[:, bottom:, :]
-    ri_z3d = np.repeat(z3d, ri_u.shape[0], axis=0)[:, bottom:, :]
-    ri_x3d = np.repeat(x3d[np.newaxis, :, :], ri_u.shape[0], axis=0)[:, bottom:, :]
-    ri_delta_x3d = np.repeat(delta_x3d[np.newaxis, :, :], ri_u.shape[0], axis=0)[:, bottom:, :]
-    postri_z3d = np.repeat(z3d, postri_u.shape[0], axis=0)[:, bottom:, :]
-    postri_x3d = np.repeat(x3d[np.newaxis, :, :], postri_u.shape[0], axis=0)[:, bottom:, :]
-    postri_delta_x3d = np.repeat(delta_x3d[np.newaxis, :, :], postri_u.shape[0], axis=0)[:, bottom:, :]
+    preri_z3d = np.repeat(z3d, preri_u.shape[0], axis=0)[:, bottom: top, :]
+    preri_x3d = np.repeat(x3d[np.newaxis, :, :], preri_u.shape[0], axis=0)[:, bottom: top, :]
+    preri_delta_x3d = np.repeat(delta_x3d[np.newaxis, :, :], preri_u.shape[0], axis=0)[:, bottom: top, :]
+    ri_z3d = np.repeat(z3d, ri_u.shape[0], axis=0)[:, bottom: top, :]
+    ri_x3d = np.repeat(x3d[np.newaxis, :, :], ri_u.shape[0], axis=0)[:, bottom: top, :]
+    ri_delta_x3d = np.repeat(delta_x3d[np.newaxis, :, :], ri_u.shape[0], axis=0)[:, bottom: top, :]
+    postri_z3d = np.repeat(z3d, postri_u.shape[0], axis=0)[:, bottom: top, :]
+    postri_x3d = np.repeat(x3d[np.newaxis, :, :], postri_u.shape[0], axis=0)[:, bottom: top, :]
+    postri_delta_x3d = np.repeat(delta_x3d[np.newaxis, :, :], postri_u.shape[0], axis=0)[:, bottom: top, :]
 
     # Slice u and v
-    preri_u, preri_v = preri_u[:, bottom:, :], preri_v[:, bottom:, :]
-    ri_u, ri_v = ri_u[:, bottom:, :], ri_v[:, bottom:, :]
-    postri_u, postri_v = postri_u[:, bottom:, :], postri_v[:, bottom:, :]
+    preri_u, preri_v = preri_u[:, bottom: top, :], preri_v[:, bottom: top, :]
+    ri_u, ri_v = ri_u[:, bottom: top, :], ri_v[:, bottom: top, :]
+    postri_u, postri_v = postri_u[:, bottom: top, :], postri_v[:, bottom: top, :]
 
     # Compute Reynolds number
     speed_sq = preri_u ** 2 + preri_v ** 2
@@ -81,6 +81,7 @@ if __name__ == "__main__":
     plt.gca().invert_yaxis()
     plt.ylabel('Height (km)')
     plt.xlabel('Range (km)')
+    plt.yticks(ticks=np.arange(10, 21, 2))
     plt.title('Average Reynolds Number Before RI')
     plt.colorbar(label='Reynolds Number (unitless)')
     plt.savefig(os.path.join(base_path, 'preri_rey_avg.png'))
@@ -91,6 +92,7 @@ if __name__ == "__main__":
                extent=(np.min(x3d), np.max(x3d), np.max(z3d), np.min(z3d)))
     plt.gca().invert_yaxis()
     plt.ylabel('Height (km)')
+    plt.yticks(ticks=np.arange(10, 21, 2))
     plt.xlabel('Range (km)')
     plt.title('Average Reynolds Number During RI')
     plt.colorbar(label='Reynolds Number (unitless)')
@@ -103,6 +105,7 @@ if __name__ == "__main__":
     plt.gca().invert_yaxis()
     plt.ylabel('Height (km)')
     plt.xlabel('Range (km)')
+    plt.yticks(ticks=np.arange(10, 21, 2))
     plt.title('Average Reynolds Number After RI')
     plt.colorbar(label='Reynolds Number (unitless)')
     plt.savefig(os.path.join(base_path, 'postri_rey_avg.png'))
