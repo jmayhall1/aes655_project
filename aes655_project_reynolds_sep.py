@@ -1,5 +1,6 @@
 # coding=utf-8
 """
+Last Edited: 04/09/2025
 @author: John Mark Mayhall
 """
 import os
@@ -57,26 +58,26 @@ if __name__ == "__main__":
 
     # Compute Reynolds number
     speed_sq = preri_u ** 2 + preri_v ** 2
-    preri_R = (np.sqrt(speed_sq) * preri_delta_x3d * 1000) / 1.5e-5
-    preri_R[np.isinf(preri_R)] = np.nan
+    preri_rey = (np.sqrt(speed_sq) * preri_delta_x3d * 1000) / 1.5e-5
+    preri_rey[np.isinf(preri_rey)] = np.nan
     # Compute the average Reynolds number
-    preri_R_avg = np.nanmean(preri_R, axis=0)
+    preri_rey_avg = np.nanmean(preri_rey, axis=0)
     # Compute Reynolds number
     speed_sq = ri_u ** 2 + ri_v ** 2
-    ri_R = (np.sqrt(speed_sq) * ri_delta_x3d * 1000) / 1.5e-5
-    ri_R[np.isinf(ri_R)] = np.nan
+    ri_rey = (np.sqrt(speed_sq) * ri_delta_x3d * 1000) / 1.5e-5
+    ri_rey[np.isinf(ri_rey)] = np.nan
     # Compute the average Reynolds number
-    ri_R_avg = np.nanmean(ri_R, axis=0)
+    ri_rey_avg = np.nanmean(ri_rey, axis=0)
     # Compute Reynolds number
     speed_sq = postri_u ** 2 + postri_v ** 2
-    postri_R = (np.sqrt(speed_sq) * postri_delta_x3d * 1000) / 1.5e-5
-    postri_R[np.isinf(postri_R)] = np.nan
+    postri_rey = (np.sqrt(speed_sq) * postri_delta_x3d * 1000) / 1.5e-5
+    postri_rey[np.isinf(postri_rey)] = np.nan
     # Compute the average Reynolds number
-    postri_R_avg = np.nanmean(postri_R, axis=0)
+    postri_rey_avg = np.nanmean(postri_rey, axis=0)
 
     # Plot average Reynolds number
     plt.figure(figsize=(10, 6))
-    plt.contourf(preri_R_avg, cmap='nipy_spectral', vmin=0, vmax=1e10,
+    plt.contourf(preri_rey_avg, cmap='nipy_spectral', vmin=0, vmax=1e10,
                  levels=np.linspace(0, 1e10, 20),
                  extent=(np.min(x3d), np.max(x3d), np.min(z3d), np.max(z3d)))
     plt.ylabel('Height (km)')
@@ -85,11 +86,11 @@ if __name__ == "__main__":
     plt.xticks(ticks=np.arange(0, 301, 50))
     plt.title('Average Reynolds Number Before RI')
     plt.colorbar(label='Reynolds Number (unitless)', ticks=np.arange(0, 1.000000001e10, 1e9))
-    plt.savefig(os.path.join(base_path, 'preri_rey_avg.png'))
+    plt.savefig(os.path.join(base_path, 'preri_rey_avg.png'), dpi=300)
     plt.close()
     # Plot average Reynolds number
     plt.figure(figsize=(10, 6))
-    plt.contourf(ri_R_avg, cmap='nipy_spectral', vmin=0, vmax=1e10,
+    plt.contourf(ri_rey_avg, cmap='nipy_spectral', vmin=0, vmax=1e10,
                  levels=np.linspace(0, 1e10, 20),
                  extent=(np.min(x3d), np.max(x3d), np.min(z3d), np.max(z3d)))
     plt.ylabel('Height (km)')
@@ -98,11 +99,11 @@ if __name__ == "__main__":
     plt.xlabel(r'Distance from TC Center (km)')
     plt.title('Average Reynolds Number During RI')
     plt.colorbar(label='Reynolds Number (unitless)', ticks=np.arange(0, 1.000000001e10, 1e9))
-    plt.savefig(os.path.join(base_path, 'ri_rey_avg.png'))
+    plt.savefig(os.path.join(base_path, 'ri_rey_avg.png'), dpi=300)
     plt.close()
     # Plot average Reynolds number
     plt.figure(figsize=(10, 6))
-    plt.contourf(postri_R_avg, cmap='nipy_spectral', vmin=0, vmax=1e10,
+    plt.contourf(postri_rey_avg, cmap='nipy_spectral', vmin=0, vmax=1e10,
                  levels=np.linspace(0, 1e10, 20),
                  extent=(np.min(x3d), np.max(x3d), np.min(z3d), np.max(z3d)))
     plt.ylabel('Height (km)')
@@ -111,5 +112,5 @@ if __name__ == "__main__":
     plt.xticks(ticks=np.arange(0, 301, 50))
     plt.title('Average Reynolds Number After RI')
     plt.colorbar(label='Reynolds Number (unitless)', ticks=np.arange(0, 1.000000001e10, 1e9))
-    plt.savefig(os.path.join(base_path, 'postri_rey_avg.png'))
+    plt.savefig(os.path.join(base_path, 'postri_rey_avg.png'), dpi=300)
     plt.close()

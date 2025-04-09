@@ -1,5 +1,6 @@
 # coding=utf-8
 """
+Last Edited: 04/09/2025
 @author: John Mark Mayhall
 """
 import collections
@@ -28,6 +29,7 @@ def plot_and_save(data_func: np.array, title: str, filename: str, levels: np.arr
     :param cbar_label: Label of the colorbar.
     :return: Nothing.
     """
+    plt.figure(figsize=(10, 6))
     plt.contourf(data_func, cmap=cmap, extent=(np.min(x), np.max(x), np.min(z), np.max(z)),
                  levels=levels, norm=norm)
     plt.xlabel(r'Distance from TC Center (km)')
@@ -36,7 +38,7 @@ def plot_and_save(data_func: np.array, title: str, filename: str, levels: np.arr
     plt.xticks(xticks)
     plt.title(title)
     plt.colorbar(label=cbar_label, ticks=cticks)
-    plt.savefig(os.path.join(output_dir, filename))
+    plt.savefig(os.path.join(output_dir, filename), dpi=300)
     plt.close()
 
 
@@ -102,8 +104,9 @@ if __name__ == "__main__":
                                           avg_data['qdiss'], avg_data['qwt'])
 
     # Plot dominant TKE term
+    plt.figure(figsize=(10, 6))
     plt.imshow(dominant_term, aspect='auto', cmap=custom_cmap, extent=(np.min(x), np.max(x), np.max(z),
-                                                                         np.min(z)), vmin=1, vmax=5)
+                                                                       np.min(z)), vmin=1, vmax=5)
     plt.xlabel(r'Distance from TC Center (km)')
     plt.gca().invert_yaxis()
     plt.ylabel('Height (km)')
@@ -113,7 +116,7 @@ if __name__ == "__main__":
     cbar = plt.colorbar()
     cbar.set_ticks([1, 2, 3, 4, 5])
     cbar.set_ticklabels(['Shear', 'Buoyancy', 'Advection', 'Dissipation', 'Vert. Transport'])
-    plt.savefig(os.path.join(output_dir, 'max_occurrence.png'))
+    plt.savefig(os.path.join(output_dir, 'max_occurrence.png'), dpi=300)
     plt.close()
 
     output_dir = "//uahdata/rstor/aes655_project/not_sep_by_intensity_phase/Hourly_Data/"
@@ -163,6 +166,7 @@ if __name__ == "__main__":
         adv_list.append(values[3])
         diss_list.append(values[4])
         vert_list.append(values[5])
+        plt.figure(figsize=(10, 6))
         plt.imshow(dominant_term, aspect='auto', cmap=custom_cmap, extent=(np.min(x), np.max(x), np.max(z),
                                                                            np.min(z)), vmin=1, vmax=5)
         plt.xlabel(r'Distance from TC Center (km)')
@@ -174,7 +178,7 @@ if __name__ == "__main__":
         cbar = plt.colorbar()
         cbar.set_ticks([1, 2, 3, 4, 5])
         cbar.set_ticklabels(['Shear', 'Buoyancy', 'Advection', 'Dissipation', 'Vert. Transport'])
-        plt.savefig(os.path.join(output_dir, 'occ_hourly', f'max_occurrence_{i}.png'))
+        plt.savefig(os.path.join(output_dir, 'occ_hourly', f'max_occurrence_{i}.png'), dpi=300)
         plt.close()
 
     output_dir = "//uahdata/rstor/aes655_project/not_sep_by_intensity_phase/Line_Data/"
@@ -186,7 +190,7 @@ if __name__ == "__main__":
     plt.xlabel('Hour')
     plt.yticks(ticks=np.arange(1, 6), labels=['Shear', 'Buoyancy', 'Advection', 'Dissipation', 'Vert. Transport'])
     plt.title('Dominant Term vs Time')
-    plt.savefig(os.path.join(output_dir, 'max_occ_over_time.png'))
+    plt.savefig(os.path.join(output_dir, 'max_occ_over_time.png'), dpi=300)
     plt.close()
 
     plt.figure(figsize=(10, 6))
@@ -199,7 +203,7 @@ if __name__ == "__main__":
     plt.xlabel('Hour')
     plt.title('Pixel Count for Terms vs Time')
     plt.legend()
-    plt.savefig(os.path.join(output_dir, 'term_count.png'))
+    plt.savefig(os.path.join(output_dir, 'term_count.png'), dpi=300)
     plt.close()
 
     plt.figure(figsize=(10, 6))
@@ -213,5 +217,5 @@ if __name__ == "__main__":
     plt.xlabel('Hour')
     plt.title('Pixel Count for Terms vs Time Excluding Higher Counts')
     plt.legend()
-    plt.savefig(os.path.join(output_dir, 'term_count_zoomed.png'))
+    plt.savefig(os.path.join(output_dir, 'term_count_zoomed.png'), dpi=300)
     plt.close()

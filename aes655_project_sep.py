@@ -1,5 +1,6 @@
 # coding=utf-8
 """
+Last Edited: 04/09/2025
 @author: John Mark Mayhall
 """
 import os
@@ -24,6 +25,7 @@ def plot_and_save(data_func: np.array, title: str, filename: str, xticks: np.arr
     :param cbar_label: Label of the colorbar.
     :return: Nothing.
     """
+    plt.figure(figsize=(10, 6))
     plt.contourf(data_func, cmap=cmap, extent=(np.min(x), np.max(x), np.min(z), np.max(z)))
     plt.xlabel(r'Distance from TC Center (km)')
     plt.ylabel('Height (km)')
@@ -31,7 +33,7 @@ def plot_and_save(data_func: np.array, title: str, filename: str, xticks: np.arr
     plt.xticks(xticks)
     plt.title(title)
     plt.colorbar(label=cbar_label)
-    plt.savefig(os.path.join(output_dir, filename))
+    plt.savefig(os.path.join(output_dir, filename), dpi=300)
     plt.close()
 
 
@@ -149,9 +151,10 @@ if __name__ == "__main__":
     cbar = plt.colorbar()
     cbar.set_ticks([1, 2, 3, 4, 5])
     cbar.set_ticklabels(['Shear', 'Buoyancy', 'Advection', 'Dissipation', 'Vert. Transport'])
-    plt.savefig(os.path.join(output_dir, 'preri_max_occurrence.png'))
+    plt.savefig(os.path.join(output_dir, 'preri_max_occurrence.png'), dpi=300)
     plt.close()
     # Plot dominant TKE term
+    plt.figure(figsize=(10, 6))
     plt.imshow(ri_dominant_term, cmap=custom_cmap, aspect='auto', extent=(np.min(x), np.max(x), np.max(z), np.min(z)),
                vmin=1, vmax=5)
     plt.gca().invert_yaxis()
@@ -163,9 +166,10 @@ if __name__ == "__main__":
     cbar = plt.colorbar()
     cbar.set_ticks([1, 2, 3, 4, 5])
     cbar.set_ticklabels(['Shear', 'Buoyancy', 'Advection', 'Dissipation', 'Vert. Transport'])
-    plt.savefig(os.path.join(output_dir, 'ri_max_occurrence.png'))
+    plt.savefig(os.path.join(output_dir, 'ri_max_occurrence.png'), dpi=300)
     plt.close()
     # Plot dominant TKE term
+    plt.figure(figsize=(10, 6))
     plt.imshow(postri_dominant_term, cmap=custom_cmap, aspect='auto',
                extent=(np.min(x), np.max(x), np.max(z), np.min(z)),
                vmin=1, vmax=5)
@@ -178,5 +182,5 @@ if __name__ == "__main__":
     cbar = plt.colorbar()
     cbar.set_ticks([1, 2, 3, 4, 5])
     cbar.set_ticklabels(['Shear', 'Buoyancy', 'Advection', 'Dissipation', 'Vert. Transport'])
-    plt.savefig(os.path.join(output_dir, 'postri_max_occurrence.png'))
+    plt.savefig(os.path.join(output_dir, 'postri_max_occurrence.png'), dpi=300)
     plt.close()

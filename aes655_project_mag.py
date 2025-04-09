@@ -1,5 +1,6 @@
 # coding=utf-8
 """
+Last Edited: 04/09/2025
 @author: John Mark Mayhall
 """
 import os
@@ -32,6 +33,7 @@ def plot_and_save(data: np.array, title: str, filename: str) -> None:
     :param filename: Filename of the plot that is being saved.
     :return: Nothing
     """
+    plt.figure(figsize=(10, 6))
     corrected_data = np.copy(data)
     corrected_data[corrected_data > 110] = 110
     plt.contourf(corrected_data, cmap='turbo', vmin=0, vmax=110, levels=np.arange(0, 111, 10),
@@ -42,7 +44,7 @@ def plot_and_save(data: np.array, title: str, filename: str) -> None:
     plt.xticks(ticks=np.arange(0, 301, 50))
     plt.title(title)
     plt.colorbar(label='%', ticks=np.arange(0, 101, 20))
-    plt.savefig(f'//uahdata/rstor/aes655_project/not_sep_by_intensity_phase/{filename}.png')
+    plt.savefig(f'//uahdata/rstor/aes655_project/not_sep_by_intensity_phase/{filename}.png', dpi=300)
     plt.close()
 
 

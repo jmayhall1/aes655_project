@@ -1,5 +1,6 @@
 # coding=utf-8
 """
+Last Edited: 04/09/2025
 @author: John Mark Mayhall
 """
 import os
@@ -62,7 +63,7 @@ if __name__ == "__main__":
     plt.xlabel(r'Distance from TC Center (km)')
     plt.title('Average Reynolds Number')
     plt.colorbar(label='Reynolds Number (unitless)', ticks=np.arange(0, 1.000000001e10, 1e9))
-    plt.savefig(os.path.join(base_path, 'rey_avg.png'))
+    plt.savefig(os.path.join(base_path, 'rey_avg.png'), dpi=300)
     plt.close()
 
     # Save individual timestep images efficiently
@@ -77,5 +78,5 @@ if __name__ == "__main__":
         plt.xlabel(r'Distance from TC Center (km)')
         plt.title(f'Reynolds Number at Hour {i}')
         plt.colorbar(label='Reynolds Number (unitless)', ticks=np.arange(0, 1.000000001e10, 1e9))
-        plt.savefig(os.path.join(output_path, f'rey_{i}.png'))
+        plt.savefig(os.path.join(output_path, f'rey_{i}.png'), dpi=300)
         plt.close()

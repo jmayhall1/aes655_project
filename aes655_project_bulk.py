@@ -1,5 +1,6 @@
 # coding=utf-8
 """
+Last Edited: 04/09/2025
 @author: John Mark Mayhall
 """
 import os
@@ -92,7 +93,7 @@ if __name__ == "__main__":
     plt.yticks(ticks=np.arange(10, 21, 2))
     plt.title('Average Richardson Number')
     plt.colorbar(label=r'$R_b$ (unitless)', ticks=np.arange(0, 11, 2))
-    plt.savefig(os.path.join(base_path, 'Rb_avg.png'))
+    plt.savefig(os.path.join(base_path, 'Rb_avg.png'), dpi=300)
     plt.close()
 
     # Initialize tracking arrays
@@ -125,7 +126,7 @@ if __name__ == "__main__":
         plt.xticks(ticks=np.arange(0, 301, 50))
         plt.title(f'$R_b$ at Hour {i}')
         plt.colorbar(label=r'$R_b$ (unitless)', ticks=np.arange(0, 11, 2))
-        plt.savefig(os.path.join(output_path, f'Rb_{i}.png'))
+        plt.savefig(os.path.join(output_path, f'Rb_{i}.png'), dpi=300)
         plt.close()
 
     # Plot minimum Richardson number over time
@@ -135,7 +136,7 @@ if __name__ == "__main__":
     plt.xlabel('Time Step')
     plt.ylim(0, 2)
     plt.title('Minimum $R_b$ vs Time')
-    plt.savefig(os.path.join(base_path, 'Rb_min.png'))
+    plt.savefig(os.path.join(base_path, 'Rb_min.png'), dpi=300)
     plt.close()
 
     base_path = '//uahdata/rstor/aes655_project/not_sep_by_intensity_phase/Average_Data/Rb/'

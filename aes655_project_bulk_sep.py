@@ -1,5 +1,6 @@
 # coding=utf-8
 """
+Last Edited: 04/09/2025
 @author: John Mark Mayhall
 """
 import os
@@ -126,7 +127,7 @@ if __name__ == "__main__":
     plt.xlabel('Range (km)')
     plt.title('Average Richardson Number Before RI')
     plt.colorbar(label=r'$R_b$ (unitless)', ticks=np.arange(0, 11, 2))
-    plt.savefig(os.path.join(base_path, 'preri_Rb_avg.png'))
+    plt.savefig(os.path.join(base_path, 'preri_Rb_avg.png'), dpi=300)
     plt.close()
     # Save the average Richardson number plot
     ri_R_avg[ri_R_avg > 10] = 10
@@ -139,7 +140,7 @@ if __name__ == "__main__":
     plt.xlabel('Range (km)')
     plt.title('Average Richardson Number During RI')
     plt.colorbar(label=r'$R_b$ (unitless)', ticks=np.arange(0, 11, 2))
-    plt.savefig(os.path.join(base_path, 'ri_Rb_avg.png'))
+    plt.savefig(os.path.join(base_path, 'ri_Rb_avg.png'), dpi=300)
     plt.close()
     # Save the average Richardson number plot
     postri_R_avg[postri_R_avg > 10] = 10
@@ -152,7 +153,7 @@ if __name__ == "__main__":
     plt.xlabel('Range (km)')
     plt.title('Average Richardson Number After RI')
     plt.colorbar(label=r'$R_b$ (unitless)', ticks=np.arange(0, 11, 2))
-    plt.savefig(os.path.join(base_path, 'postri_Rb_avg.png'))
+    plt.savefig(os.path.join(base_path, 'postri_Rb_avg.png'), dpi=300)
     plt.close()
 
     # Initialize tracking arrays
@@ -168,13 +169,19 @@ if __name__ == "__main__":
         minimum_loc += (Ri == np.nanmin(Ri)).astype(int)
         loc025 += (Ri < 0.25).astype(int)
         loc1 += (Ri < 1).astype(int)
+    minimum_loc = np.divide(minimum_loc, num_timesteps)
+    loc025 = np.divide(loc025, num_timesteps)
+    loc1 = np.divide(loc1, num_timesteps)
     # Save occurrence heatmaps
-    save_heatmap(minimum_loc, 'Location of Minimum $R_b$ Before RI', 'preri_minRb_loc.png',
-                 r'# of Minimum $R_b$ Occurrences')
-    save_heatmap(loc025, 'Location of $R_b$ < 0.25 Before RI', 'preri_025Rb_loc.png',
-                 r'# of $R_b$ < 0.25 Occurrences')
-    save_heatmap(loc1, 'Location of $R_b$ < 1 Before RI', 'preri_1Rb_loc.png',
-                 r'# of $R_b$ < 1 Occurrences')
+    save_heatmap(minimum_loc, 'Location of Minimum $R_b$ Before RI \n Normalized By Number of Timesteps',
+                 'preri_minRb_loc.png',
+                 colorbar_label=(r'# of Minimum $R_b$ Occurrences' + '\n Divided by # of Timesteps'))
+    save_heatmap(loc025, 'Location of $R_b$ < 0.25 Before RI \n Normalized By Number of Timesteps',
+                 'preri_025Rb_loc.png',
+                 colorbar_label=(r'# of $R_b$ < 0.25 Occurrences' + '\n Divided by # of Timesteps'))
+    save_heatmap(loc1, 'Location of $R_b$ < 1 Before RI \n Normalized By Number of Timesteps',
+                 'preri_1Rb_loc.png',
+                 colorbar_label=(r'# of $R_b$ < 1 Occurrences' + '\n Divided by # of Timesteps'))
 
     # Initialize tracking arrays
     num_timesteps, zdim, xdim = ri_R.shape
@@ -189,13 +196,19 @@ if __name__ == "__main__":
         minimum_loc += (Ri == np.nanmin(Ri)).astype(int)
         loc025 += (Ri < 0.25).astype(int)
         loc1 += (Ri < 1).astype(int)
+    minimum_loc = np.divide(minimum_loc, num_timesteps)
+    loc025 = np.divide(loc025, num_timesteps)
+    loc1 = np.divide(loc1, num_timesteps)
     # Save occurrence heatmaps
-    save_heatmap(minimum_loc, 'Location of Minimum $R_b$ During RI', 'ri_minRb_loc.png',
-                 r'# of Minimum $R_b$ Occurrences')
-    save_heatmap(loc025, 'Location of $R_b$ < 0.25 During RI', 'ri_025Rb_loc.png',
-                 r'# of $R_b$ < 0.25 Occurrences')
-    save_heatmap(loc1, 'Location of $R_b$ < 1 During RI', 'ri_1Rb_loc.png',
-                 r'# of $R_b$ < 1 Occurrences')
+    save_heatmap(minimum_loc, 'Location of Minimum $R_b$ During RI \n Normalized By Number of Timesteps',
+                 'ri_minRb_loc.png',
+                 colorbar_label=(r'# of Minimum $R_b$ Occurrences' + '\n Divided by # of Timesteps'))
+    save_heatmap(loc025, 'Location of $R_b$ < 0.25 During RI \n Normalized By Number of Timesteps',
+                 'ri_025Rb_loc.png',
+                 colorbar_label=(r'# of $R_b$ < 0.25 Occurrences' + '\n Divided by # of Timesteps'))
+    save_heatmap(loc1, 'Location of $R_b$ < 1 During RI \n Normalized By Number of Timesteps',
+                 'ri_1Rb_loc.png',
+                 colorbar_label=(r'# of $R_b$ < 1 Occurrences' + '\n Divided by # of Timesteps'))
 
     # Initialize tracking arrays
     num_timesteps, zdim, xdim = postri_R.shape
@@ -210,10 +223,16 @@ if __name__ == "__main__":
         minimum_loc += (Ri == np.nanmin(Ri)).astype(int)
         loc025 += (Ri < 0.25).astype(int)
         loc1 += (Ri < 1).astype(int)
+    minimum_loc = np.divide(minimum_loc, num_timesteps)
+    loc025 = np.divide(loc025, num_timesteps)
+    loc1 = np.divide(loc1, num_timesteps)
     # Save occurrence heatmaps
-    save_heatmap(minimum_loc, 'Location of Minimum $R_b$ After RI', 'postri_minRb_loc.png',
-                 r'# of Minimum $R_b$ Occurrences')
-    save_heatmap(loc025, 'Location of $R_b$ < 0.25 After RI', 'postri_025Rb_loc.png',
-                 r'# of $R_b$ < 0.25 Occurrences')
-    save_heatmap(loc1, 'Location of $R_b$ < 1 After RI', 'postri_1Rb_loc.png',
-                 r'# of $R_b$ < 1 Occurrences')
+    save_heatmap(minimum_loc, 'Location of Minimum $R_b$ After RI \n Normalized By Number of Timesteps',
+                 'postri_minRb_loc.png',
+                 colorbar_label=(r'# of Minimum $R_b$ Occurrences' + '\n Divided by # of Timesteps'))
+    save_heatmap(loc025, 'Location of $R_b$ < 0.25 After RI \n Normalized By Number of Timesteps',
+                 'postri_025Rb_loc.png',
+                 colorbar_label=(r'# of $R_b$ < 0.25 Occurrences' + '\n Divided by # of Timesteps'))
+    save_heatmap(loc1, 'Location of $R_b$ < 1 After RI \n Normalized By Number of Timesteps',
+                 'postri_1Rb_loc.png',
+                 colorbar_label=(r'# of $R_b$ < 1 Occurrences' + '\n Divided by # of Timesteps'))
