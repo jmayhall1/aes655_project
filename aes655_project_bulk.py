@@ -11,25 +11,28 @@ import numpy as np
 
 
 # Function to save occurrence heatmaps
-def save_heatmap(data: np.array, title: str, filename: str, colorbar_label: str) -> None:
+def save_heatmap(data: np.array, title: str, filename: str, colorbar_label: str, vmax, levels, ticks) -> None:
     """
     Function to plot occurrence heatmaps.
+    :param ticks: Colorbar ticks
+    :param levels: Colorbar levels
+    :param vmax: Max value
     :param data: Data to be used for plotting
     :param title: Title of the created plot
     :param filename: Saved plot's filename
     :param colorbar_label: Colorbar Label
     :return: Nothing
     """
-    plt.figure(figsize=(8, 6))
-    plt.imshow(data, aspect='auto', cmap='rainbow', vmin=0,
-               extent=(np.min(x), np.max(x), np.max(z) / 1000, np.min(z) / 1000))
-    plt.gca().invert_yaxis()
+    plt.figure(figsize=(10, 6))
+    plt.contourf(data, cmap='turbo', vmin=0, levels=levels, vmax=vmax,
+                 extent=(np.min(x), np.max(x), np.min(z) / 1000, np.max(z) / 1000))
     plt.ylabel('Height (km)')
     plt.yticks(ticks=np.arange(10, 21, 2))
-    plt.xlabel('Range (km)')
+    plt.xticks(ticks=np.arange(0, 301, 50))
+    plt.xlabel(r'Distance from TC Center (km)')
     plt.title(title)
-    plt.colorbar(label=colorbar_label)
-    plt.savefig(os.path.join(base_path, filename))
+    plt.colorbar(label=colorbar_label, ticks=ticks)
+    plt.savefig(os.path.join(base_path, filename), dpi=300)
     plt.close()
 
 
@@ -42,11 +45,11 @@ if __name__ == "__main__":
     base_path = '//uahdata/rstor/aes655_project/'
     # Load NetCDF data efficiently
     ncfile = netCDF4.Dataset(os.path.join(base_path, 'cm1out_azimavg_s.nc'))
-    z = np.array(ncfile.variables['lev'])
-    x = np.array(ncfile.variables['lon'])
-    u = np.array(ncfile.variables['u'])[:, :, 0, :]
-    v = np.array(ncfile.variables['v'])[:, :, 0, :]
-    thv = np.array(ncfile.variables['thv'])[:, :, 0, :]
+    z = np.asarray(ncfile.variables['lev'])
+    x = np.asarray(ncfile.variables['lon'])
+    u = np.asarray(ncfile.variables['u'])[:, :, 0, :]
+    v = np.asarray(ncfile.variables['v'])[:, :, 0, :]
+    thv = np.asarray(ncfile.variables['thv'])[:, :, 0, :]
     ncfile.close()  # Close file after loading data
 
     # Compute vertical differences
@@ -79,15 +82,16 @@ if __name__ == "__main__":
 
     base_path = '//uahdata/rstor/aes655_project/not_sep_by_intensity_phase/Average_Data/Rb/'
     # Save the average Richardson number plot
-    plt.figure(figsize=(8, 6))
-    plt.imshow(R_avg, aspect='auto', cmap='rainbow', vmin=-1, vmax=10,
-               extent=(np.min(x), np.max(x), np.max(z) / 1000, np.min(z) / 1000))
-    plt.gca().invert_yaxis()
+    plt.figure(figsize=(10, 6))
+    R_avg[R_avg > 10] = 10
+    plt.contourf(R_avg, cmap='turbo', vmin=-1, vmax=10, levels=np.arange(-1, 11, 1),
+                 extent=(np.min(x), np.max(x), np.min(z) / 1000, np.max(z) / 1000))
     plt.ylabel('Height (km)')
-    plt.xlabel('Range (km)')
+    plt.xlabel(r'Distance from TC Center (km)')
+    plt.xticks(ticks=np.arange(0, 301, 50))
     plt.yticks(ticks=np.arange(10, 21, 2))
     plt.title('Average Richardson Number')
-    plt.colorbar(label=r'$R_b$ (unitless)')
+    plt.colorbar(label=r'$R_b$ (unitless)', ticks=np.arange(0, 11, 2))
     plt.savefig(os.path.join(base_path, 'Rb_avg.png'))
     plt.close()
 
@@ -111,20 +115,21 @@ if __name__ == "__main__":
         loc1 += (Ri < 1).astype(int)
 
         # Save individual timestep plot
-        plt.figure(figsize=(8, 6))
-        plt.imshow(Ri, aspect='auto', cmap='rainbow', vmin=-1, vmax=1,
-                   extent=(np.min(x), np.max(x), np.max(z) / 1000, np.min(z) / 1000))
-        plt.gca().invert_yaxis()
+        plt.figure(figsize=(10, 6))
+        Ri[Ri > 10] = 10
+        plt.contourf(Ri, cmap='turbo', vmin=-1, vmax=10, levels=np.arange(-1, 11, 1),
+                     extent=(np.min(x), np.max(x), np.min(z) / 1000, np.max(z) / 1000))
         plt.ylabel('Height (km)')
-        plt.xlabel('Range (km)')
+        plt.xlabel(r'Distance from TC Center (km)')
         plt.yticks(ticks=np.arange(10, 21, 2))
-        plt.title(f'$R_b$ at Timestep {i}')
-        plt.colorbar(label=r'$R_b$ (unitless)')
+        plt.xticks(ticks=np.arange(0, 301, 50))
+        plt.title(f'$R_b$ at Hour {i}')
+        plt.colorbar(label=r'$R_b$ (unitless)', ticks=np.arange(0, 11, 2))
         plt.savefig(os.path.join(output_path, f'Rb_{i}.png'))
         plt.close()
 
     # Plot minimum Richardson number over time
-    plt.figure(figsize=(8, 6))
+    plt.figure(figsize=(10, 6))
     plt.plot(time, minimum_values, marker='o', linestyle='-')
     plt.ylabel('$R_b$')
     plt.xlabel('Time Step')
@@ -135,6 +140,12 @@ if __name__ == "__main__":
 
     base_path = '//uahdata/rstor/aes655_project/not_sep_by_intensity_phase/Average_Data/Rb/'
     # Save occurrence heatmaps
-    save_heatmap(minimum_loc, 'Location of Minimum $R_b$', 'minRb_loc.png', r'# of Minimum $R_b$ Occurrences')
-    save_heatmap(loc025, 'Location of $R_b$ < 0.25', '025Rb_loc.png', r'# of $R_b$ < 0.25 Occurrences')
-    save_heatmap(loc1, 'Location of $R_b$ < 1', '1Rb_loc.png', r'# of $R_b$ < 1 Occurrences')
+    save_heatmap(minimum_loc, 'Location of Minimum $R_b$', 'minRb_loc.png',
+                 r'# of Minimum $R_b$ Occurrences', vmax=10, levels=np.arange(0, 11, 1),
+                 ticks=np.arange(0, 11, 2))
+    save_heatmap(loc025, 'Location of $R_b$ < 0.25', '025Rb_loc.png',
+                 r'# of $R_b$ < 0.25 Occurrences', vmax=150, levels=np.arange(0, 151, 12.5),
+                 ticks=np.arange(0, 151, 25))
+    save_heatmap(loc1, 'Location of $R_b$ < 1', '1Rb_loc.png',
+                 r'# of $R_b$ < 1 Occurrences', vmax=175, levels=np.arange(0, 176, 12.5),
+                 ticks=np.arange(0, 176, 25))

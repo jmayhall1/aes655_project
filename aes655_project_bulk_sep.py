@@ -11,6 +11,7 @@ import numpy as np
 
 
 # Function to save occurrence heatmaps
+# Function to save occurrence heatmaps
 def save_heatmap(data: np.array, title: str, filename: str, colorbar_label: str) -> None:
     """
     Function to plot occurrence heatmaps.
@@ -20,16 +21,16 @@ def save_heatmap(data: np.array, title: str, filename: str, colorbar_label: str)
     :param colorbar_label: Colorbar Label
     :return: Nothing
     """
-    plt.figure(figsize=(8, 6))
-    plt.imshow(data, aspect='auto', cmap='rainbow', vmin=0,
-               extent=(np.min(x), np.max(x), np.max(z) / 1000, np.min(z) / 1000))
-    plt.gca().invert_yaxis()
+    plt.figure(figsize=(10, 6))
+    plt.contourf(data, cmap='turbo', vmin=0,
+                 extent=(np.min(x), np.max(x), np.min(z) / 1000, np.max(z) / 1000))
     plt.ylabel('Height (km)')
     plt.yticks(ticks=np.arange(10, 21, 2))
-    plt.xlabel('Range (km)')
+    plt.xticks(ticks=np.arange(0, 301, 50))
+    plt.xlabel(r'Distance from TC Center (km)')
     plt.title(title)
     plt.colorbar(label=colorbar_label)
-    plt.savefig(os.path.join(base_path, filename))
+    plt.savefig(os.path.join(base_path, filename), dpi=300)
     plt.close()
 
 
@@ -40,20 +41,20 @@ if __name__ == "__main__":
     # Load NetCDF data efficiently
     ncfile = netCDF4.Dataset(os.path.join(base_path, 'cm1out_azimavg_s.nc'))
     base_path = '//uahdata/rstor/aes655_project/sep_by_intensity_phase/'
-    z = np.array(ncfile.variables['lev'])
-    x = np.array(ncfile.variables['lon'])
-    mtime = (np.array(ncfile.variables['mtime']) / 3600)[:, 0, 0]
-    pre_ri_time = np.where(mtime == 40)[0][0]
-    post_ri_time = np.where(mtime == 61)[0][0]
-    preri_u = np.array(ncfile.variables['u'])[:pre_ri_time, :, 0, :]
-    preri_v = np.array(ncfile.variables['v'])[:pre_ri_time, :, 0, :]
-    preri_thv = np.array(ncfile.variables['thv'])[:pre_ri_time, :, 0, :]
-    ri_u = np.array(ncfile.variables['u'])[pre_ri_time:post_ri_time, :, 0, :]
-    ri_v = np.array(ncfile.variables['v'])[pre_ri_time:post_ri_time, :, 0, :]
-    ri_thv = np.array(ncfile.variables['thv'])[pre_ri_time:post_ri_time, :, 0, :]
-    postri_u = np.array(ncfile.variables['u'])[post_ri_time:, :, 0, :]
-    postri_v = np.array(ncfile.variables['v'])[post_ri_time:, :, 0, :]
-    postri_thv = np.array(ncfile.variables['thv'])[post_ri_time:, :, 0, :]
+    z = np.asarray(ncfile.variables['lev'])
+    x = np.asarray(ncfile.variables['lon'])
+    mtime = (np.asarray(ncfile.variables['mtime']) / 3600)[:, 0, 0]
+    pre_ri_time = np.where(mtime == 10)[0][0]
+    post_ri_time = np.where(mtime == 71)[0][0]
+    preri_u = np.asarray(ncfile.variables['u'])[:pre_ri_time, :, 0, :]
+    preri_v = np.asarray(ncfile.variables['v'])[:pre_ri_time, :, 0, :]
+    preri_thv = np.asarray(ncfile.variables['thv'])[:pre_ri_time, :, 0, :]
+    ri_u = np.asarray(ncfile.variables['u'])[pre_ri_time:post_ri_time, :, 0, :]
+    ri_v = np.asarray(ncfile.variables['v'])[pre_ri_time:post_ri_time, :, 0, :]
+    ri_thv = np.asarray(ncfile.variables['thv'])[pre_ri_time:post_ri_time, :, 0, :]
+    postri_u = np.asarray(ncfile.variables['u'])[post_ri_time:, :, 0, :]
+    postri_v = np.asarray(ncfile.variables['v'])[post_ri_time:, :, 0, :]
+    postri_thv = np.asarray(ncfile.variables['thv'])[post_ri_time:, :, 0, :]
     ncfile.close()  # Close file after loading data
 
     # Compute vertical differences
@@ -115,39 +116,42 @@ if __name__ == "__main__":
     postri_R_avg = np.nanmean(postri_R, axis=0)
 
     # Save the average Richardson number plot
-    plt.figure(figsize=(8, 6))
-    plt.imshow(preri_R_avg, aspect='auto', cmap='rainbow', vmin=-1, vmax=10,
-               extent=(np.min(x), np.max(x), np.max(z) / 1000, np.min(z) / 1000))
-    plt.gca().invert_yaxis()
+    preri_R_avg[preri_R_avg > 10] = 10
+    plt.figure(figsize=(10, 6))
+    plt.contourf(preri_R_avg, vmin=-1, vmax=10, cmap='turbo', levels=np.arange(0, 11, 1),
+                 extent=(np.min(x), np.max(x), np.min(z) / 1000, np.max(z) / 1000))
     plt.ylabel('Height (km)')
     plt.yticks(ticks=np.arange(10, 21, 2))
+    plt.xticks(ticks=np.arange(0, 301, 50))
     plt.xlabel('Range (km)')
     plt.title('Average Richardson Number Before RI')
-    plt.colorbar(label=r'$R_b$ (unitless)')
+    plt.colorbar(label=r'$R_b$ (unitless)', ticks=np.arange(0, 11, 2))
     plt.savefig(os.path.join(base_path, 'preri_Rb_avg.png'))
     plt.close()
     # Save the average Richardson number plot
-    plt.figure(figsize=(8, 6))
-    plt.imshow(ri_R_avg, aspect='auto', cmap='rainbow', vmin=-1, vmax=10,
-               extent=(np.min(x), np.max(x), np.max(z) / 1000, np.min(z) / 1000))
-    plt.gca().invert_yaxis()
+    ri_R_avg[ri_R_avg > 10] = 10
+    plt.figure(figsize=(10, 6))
+    plt.contourf(ri_R_avg, cmap='turbo', vmin=-1, vmax=10, levels=np.arange(0, 11, 1),
+                 extent=(np.min(x), np.max(x), np.min(z) / 1000, np.max(z) / 1000))
     plt.ylabel('Height (km)')
     plt.yticks(ticks=np.arange(10, 21, 2))
+    plt.xticks(ticks=np.arange(0, 301, 50))
     plt.xlabel('Range (km)')
     plt.title('Average Richardson Number During RI')
-    plt.colorbar(label=r'$R_b$ (unitless)')
+    plt.colorbar(label=r'$R_b$ (unitless)', ticks=np.arange(0, 11, 2))
     plt.savefig(os.path.join(base_path, 'ri_Rb_avg.png'))
     plt.close()
     # Save the average Richardson number plot
-    plt.figure(figsize=(8, 6))
-    plt.imshow(postri_R_avg, aspect='auto', cmap='rainbow', vmin=-1, vmax=10,
-               extent=(np.min(x), np.max(x), np.max(z) / 1000, np.min(z) / 1000))
-    plt.gca().invert_yaxis()
+    postri_R_avg[postri_R_avg > 10] = 10
+    plt.figure(figsize=(10, 6))
+    plt.contourf(postri_R_avg, cmap='turbo', vmin=-1, vmax=10, levels=np.arange(0, 11, 1),
+                 extent=(np.min(x), np.max(x), np.min(z) / 1000, np.max(z) / 1000))
     plt.yticks(ticks=np.arange(10, 21, 2))
+    plt.xticks(ticks=np.arange(0, 301, 50))
     plt.ylabel('Height (km)')
     plt.xlabel('Range (km)')
     plt.title('Average Richardson Number After RI')
-    plt.colorbar(label=r'$R_b$ (unitless)')
+    plt.colorbar(label=r'$R_b$ (unitless)', ticks=np.arange(0, 11, 2))
     plt.savefig(os.path.join(base_path, 'postri_Rb_avg.png'))
     plt.close()
 

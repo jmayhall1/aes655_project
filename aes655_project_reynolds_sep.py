@@ -15,17 +15,17 @@ if __name__ == "__main__":
     # Load NetCDF data efficiently
     ncfile = netCDF4.Dataset(os.path.join(base_path, 'cm1out_azimavg_s.nc'))
     base_path = '//uahdata/rstor/aes655_project/sep_by_intensity_phase/'
-    z = np.array(ncfile.variables['lev'])
-    x = np.array(ncfile.variables['lon'])
-    mtime = (np.array(ncfile.variables['mtime']) / 3600)[:, 0, 0]
-    pre_ri_time = np.where(mtime == 40)[0][0]
-    post_ri_time = np.where(mtime == 61)[0][0]
-    preri_u = np.array(ncfile.variables['u'])[:pre_ri_time, :, 0, :]
-    preri_v = np.array(ncfile.variables['v'])[:pre_ri_time, :, 0, :]
-    ri_u = np.array(ncfile.variables['u'])[pre_ri_time:post_ri_time, :, 0, :]
-    ri_v = np.array(ncfile.variables['v'])[pre_ri_time:post_ri_time, :, 0, :]
-    postri_u = np.array(ncfile.variables['u'])[post_ri_time:, :, 0, :]
-    postri_v = np.array(ncfile.variables['v'])[post_ri_time:, :, 0, :]
+    z = np.asarray(ncfile.variables['lev'])
+    x = np.asarray(ncfile.variables['lon'])
+    mtime = (np.asarray(ncfile.variables['mtime']) / 3600)[:, 0, 0]
+    pre_ri_time = np.where(mtime == 10)[0][0]
+    post_ri_time = np.where(mtime == 71)[0][0]
+    preri_u = np.asarray(ncfile.variables['u'])[:pre_ri_time, :, 0, :]
+    preri_v = np.asarray(ncfile.variables['v'])[:pre_ri_time, :, 0, :]
+    ri_u = np.asarray(ncfile.variables['u'])[pre_ri_time:post_ri_time, :, 0, :]
+    ri_v = np.asarray(ncfile.variables['v'])[pre_ri_time:post_ri_time, :, 0, :]
+    postri_u = np.asarray(ncfile.variables['u'])[post_ri_time:, :, 0, :]
+    postri_v = np.asarray(ncfile.variables['v'])[post_ri_time:, :, 0, :]
     ncfile.close()  # Close file after loading data
 
     # Compute spatial step differences
@@ -75,38 +75,41 @@ if __name__ == "__main__":
     postri_R_avg = np.nanmean(postri_R, axis=0)
 
     # Plot average Reynolds number
-    plt.figure(figsize=(8, 6))
-    plt.imshow(preri_R_avg, aspect='auto', cmap='nipy_spectral', vmin=0, vmax=1e10,
-               extent=(np.min(x3d), np.max(x3d), np.max(z3d), np.min(z3d)))
-    plt.gca().invert_yaxis()
+    plt.figure(figsize=(10, 6))
+    plt.contourf(preri_R_avg, cmap='nipy_spectral', vmin=0, vmax=1e10,
+                 levels=np.linspace(0, 1e10, 20),
+                 extent=(np.min(x3d), np.max(x3d), np.min(z3d), np.max(z3d)))
     plt.ylabel('Height (km)')
-    plt.xlabel('Range (km)')
+    plt.xlabel(r'Distance from TC Center (km)')
     plt.yticks(ticks=np.arange(10, 21, 2))
+    plt.xticks(ticks=np.arange(0, 301, 50))
     plt.title('Average Reynolds Number Before RI')
-    plt.colorbar(label='Reynolds Number (unitless)')
+    plt.colorbar(label='Reynolds Number (unitless)', ticks=np.arange(0, 1.000000001e10, 1e9))
     plt.savefig(os.path.join(base_path, 'preri_rey_avg.png'))
     plt.close()
     # Plot average Reynolds number
-    plt.figure(figsize=(8, 6))
-    plt.imshow(ri_R_avg, aspect='auto', cmap='nipy_spectral', vmin=0, vmax=1e10,
-               extent=(np.min(x3d), np.max(x3d), np.max(z3d), np.min(z3d)))
-    plt.gca().invert_yaxis()
+    plt.figure(figsize=(10, 6))
+    plt.contourf(ri_R_avg, cmap='nipy_spectral', vmin=0, vmax=1e10,
+                 levels=np.linspace(0, 1e10, 20),
+                 extent=(np.min(x3d), np.max(x3d), np.min(z3d), np.max(z3d)))
     plt.ylabel('Height (km)')
     plt.yticks(ticks=np.arange(10, 21, 2))
-    plt.xlabel('Range (km)')
+    plt.xticks(ticks=np.arange(0, 301, 50))
+    plt.xlabel(r'Distance from TC Center (km)')
     plt.title('Average Reynolds Number During RI')
-    plt.colorbar(label='Reynolds Number (unitless)')
+    plt.colorbar(label='Reynolds Number (unitless)', ticks=np.arange(0, 1.000000001e10, 1e9))
     plt.savefig(os.path.join(base_path, 'ri_rey_avg.png'))
     plt.close()
     # Plot average Reynolds number
-    plt.figure(figsize=(8, 6))
-    plt.imshow(postri_R_avg, aspect='auto', cmap='nipy_spectral', vmin=0, vmax=1e10,
-               extent=(np.min(x3d), np.max(x3d), np.max(z3d), np.min(z3d)))
-    plt.gca().invert_yaxis()
+    plt.figure(figsize=(10, 6))
+    plt.contourf(postri_R_avg, cmap='nipy_spectral', vmin=0, vmax=1e10,
+                 levels=np.linspace(0, 1e10, 20),
+                 extent=(np.min(x3d), np.max(x3d), np.min(z3d), np.max(z3d)))
     plt.ylabel('Height (km)')
-    plt.xlabel('Range (km)')
+    plt.xlabel(r'Distance from TC Center (km)')
     plt.yticks(ticks=np.arange(10, 21, 2))
+    plt.xticks(ticks=np.arange(0, 301, 50))
     plt.title('Average Reynolds Number After RI')
-    plt.colorbar(label='Reynolds Number (unitless)')
+    plt.colorbar(label='Reynolds Number (unitless)', ticks=np.arange(0, 1.000000001e10, 1e9))
     plt.savefig(os.path.join(base_path, 'postri_rey_avg.png'))
     plt.close()

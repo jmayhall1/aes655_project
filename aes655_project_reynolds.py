@@ -17,10 +17,10 @@ if __name__ == "__main__":
 
     # Load NetCDF data efficiently
     ncfile = netCDF4.Dataset(os.path.join(base_path, 'cm1out_azimavg_s.nc'))
-    z = np.array(ncfile.variables['lev'])
-    x = np.array(ncfile.variables['lon'])
-    u = np.array(ncfile.variables['u'])[:, :, 0, :]
-    v = np.array(ncfile.variables['v'])[:, :, 0, :]
+    z = np.asarray(ncfile.variables['lev'])
+    x = np.asarray(ncfile.variables['lon'])
+    u = np.asarray(ncfile.variables['u'])[:, :, 0, :]
+    v = np.asarray(ncfile.variables['v'])[:, :, 0, :]
     ncfile.close()  # Close file after loading data
 
     # Compute spatial step differences
@@ -53,28 +53,29 @@ if __name__ == "__main__":
     R_avg = np.nanmean(R, axis=0)
 
     # Plot average Reynolds number
-    plt.figure(figsize=(8, 6))
-    plt.imshow(R_avg, aspect='auto', cmap='nipy_spectral', vmin=0,
-               extent=(np.min(x3d), np.max(x3d), np.max(z3d), np.min(z3d)))
-    plt.gca().invert_yaxis()
+    plt.figure(figsize=(10, 6))
+    plt.contourf(R_avg, cmap='nipy_spectral', vmin=0, vmax=1e10,
+                 levels=np.linspace(0, 1e10, 20), extent=(np.min(x3d), np.max(x3d), np.min(z3d), np.max(z3d)))
     plt.yticks(ticks=np.arange(10, 21, 2))
+    plt.xticks(ticks=np.arange(0, 301, 50))
     plt.ylabel('Height (km)')
-    plt.xlabel('Range (km)')
+    plt.xlabel(r'Distance from TC Center (km)')
     plt.title('Average Reynolds Number')
-    plt.colorbar(label='Reynolds Number (unitless)')
+    plt.colorbar(label='Reynolds Number (unitless)', ticks=np.arange(0, 1.000000001e10, 1e9))
     plt.savefig(os.path.join(base_path, 'rey_avg.png'))
     plt.close()
 
     # Save individual timestep images efficiently
     for i, Ri in enumerate(R):
-        plt.figure(figsize=(8, 6))
-        plt.imshow(Ri, aspect='auto', cmap='nipy_spectral', vmin=0,
-                   extent=(np.min(x3d), np.max(x3d), np.max(z3d) / 1000, np.min(z3d) / 1000))
-        plt.gca().invert_yaxis()
+        plt.figure(figsize=(10, 6))
+        plt.contourf(Ri, cmap='nipy_spectral', vmin=0, vmax=1e10,
+                     levels=np.linspace(0, 1e10, 20),
+                     extent=(np.min(x3d), np.max(x3d), np.min(z3d), np.max(z3d)))
         plt.ylabel('Height (km)')
         plt.yticks(ticks=np.arange(10, 21, 2))
-        plt.xlabel('Range (km)')
-        plt.title(f'Reynolds Number at Timestep {i}')
-        plt.colorbar(label='Reynolds Number (unitless)')
+        plt.xticks(ticks=np.arange(0, 301, 50))
+        plt.xlabel(r'Distance from TC Center (km)')
+        plt.title(f'Reynolds Number at Hour {i}')
+        plt.colorbar(label='Reynolds Number (unitless)', ticks=np.arange(0, 1.000000001e10, 1e9))
         plt.savefig(os.path.join(output_path, f'rey_{i}.png'))
         plt.close()

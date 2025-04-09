@@ -32,14 +32,16 @@ def plot_and_save(data: np.array, title: str, filename: str) -> None:
     :param filename: Filename of the plot that is being saved.
     :return: Nothing
     """
-    plt.imshow(data, aspect='auto', cmap='rainbow', vmin=0, vmax=110,
-               extent=(x.min(), x.max(), z.max(), z.min()))
-    plt.gca().invert_yaxis()
+    corrected_data = np.copy(data)
+    corrected_data[corrected_data > 110] = 110
+    plt.contourf(corrected_data, cmap='turbo', vmin=0, vmax=110, levels=np.arange(0, 111, 10),
+                 extent=(x.min(), x.max(), z.min(), z.max()))
     plt.ylabel('Height (km)')
-    plt.xlabel('Range (km)')
+    plt.xlabel(r'Distance from TC Center (km)')
     plt.yticks(ticks=np.arange(10, 21, 2))
+    plt.xticks(ticks=np.arange(0, 301, 50))
     plt.title(title)
-    plt.colorbar(label='%')
+    plt.colorbar(label='%', ticks=np.arange(0, 101, 20))
     plt.savefig(f'//uahdata/rstor/aes655_project/not_sep_by_intensity_phase/{filename}.png')
     plt.close()
 
@@ -52,21 +54,24 @@ if __name__ == "__main__":
     dataset = netCDF4.Dataset(path)
 
     # Read variables
-    z = np.array(dataset.variables['lev'])
-    x = np.array(dataset.variables['lon'])
+    z = np.asarray(dataset.variables['lev'])
+    x = np.asarray(dataset.variables['lon'])
     bottom = np.searchsorted(z, 10) - 1  # More efficient than np.where(z > 10)[0][0]
     top = np.searchsorted(z, 20) + 1
     z = z[bottom:top]
 
     # Extract data slices only once
-    data_shear = np.array(dataset.variables['qshear'])[:, bottom:top, 0, :]
-    data_buoy = np.array(dataset.variables['qbuoy'])[:, bottom:top, 0, :]
-    data_diss = np.array(dataset.variables['qdiss'])[:, bottom:top, 0, :]
+    data_shear = np.asarray(dataset.variables['qshear'])[:, bottom:top, 0, :]
+    data_buoy = np.asarray(dataset.variables['qbuoy'])[:, bottom:top, 0, :]
+    data_diss = np.asarray(dataset.variables['qdiss'])[:, bottom:top, 0, :]
 
     # Compute normalized values
     buoy_shear = safe_divide(data_buoy, data_shear)
+    buoy_shear[buoy_shear > 110] = 110
     diss_shear = safe_divide(data_diss, data_shear)
+    diss_shear[diss_shear > 110] = 110
     buoydiss_shear = safe_divide(data_buoy + data_diss, data_shear)
+    buoydiss_shear[buoydiss_shear > 110] = 110
 
     # Compute averages
     buoy_avg_shear = np.nanmean(buoy_shear, axis=0)
@@ -90,9 +95,9 @@ if __name__ == "__main__":
 
     # Generate and save time-step plots
     for i in range(data_shear.shape[0]):
-        plot_and_save(buoy_shear[i], f'Buoyancy Production % at {i} Timestep',
+        plot_and_save(buoy_shear[i], f'Buoyancy Production % at {i} Hour',
                       f'Hourly_Data/buoy_percent_hourly/buoy_percent_{i}')
-        plot_and_save(diss_shear[i], f'Dissipation % at {i} Timestep',
+        plot_and_save(diss_shear[i], f'Dissipation % at {i} Hour',
                       f'Hourly_Data/diss_percent_hourly/diss_percent_{i}')
-        plot_and_save(buoydiss_shear[i], f'Buoyancy Production and Dissipation % at {i} Timestep',
+        plot_and_save(buoydiss_shear[i], f'Buoyancy Production and Dissipation % at {i} Hour',
                       f'Hourly_Data/buoydiss_percent_hourly/buoydiss_percent_{i}')
