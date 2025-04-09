@@ -46,7 +46,7 @@ if __name__ == "__main__":
     x = np.asarray(ncfile.variables['lon'])
     mtime = (np.asarray(ncfile.variables['mtime']) / 3600)[:, 0, 0]
     pre_ri_time = np.where(mtime == 10)[0][0]
-    post_ri_time = np.where(mtime == 71)[0][0]
+    post_ri_time = np.where(mtime == 76)[0][0]
     preri_u = np.asarray(ncfile.variables['u'])[:pre_ri_time, :, 0, :]
     preri_v = np.asarray(ncfile.variables['v'])[:pre_ri_time, :, 0, :]
     preri_thv = np.asarray(ncfile.variables['thv'])[:pre_ri_time, :, 0, :]

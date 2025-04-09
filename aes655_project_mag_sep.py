@@ -62,7 +62,7 @@ if __name__ == "__main__":
     z = z[bottom: top]
     mtime = (np.asarray(dataset.variables['mtime']) / 3600)[:, 0, 0]
     pre_ri_time = np.where(mtime == 10)[0][0]
-    post_ri_time = np.where(mtime == 71)[0][0]
+    post_ri_time = np.where(mtime == 76)[0][0]
 
     # Extract data slices only once
     data_shear = np.asarray(dataset.variables['qshear'])[:pre_ri_time, bottom: top, 0, :]

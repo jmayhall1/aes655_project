@@ -59,7 +59,7 @@ if __name__ == "__main__":
         x = np.asarray(ds.variables['lon'])
         mtime = (np.asarray(ds.variables['mtime']) / 3600)[:, 0, 0]
         pre_ri_time = np.where(mtime == 10)[0][0]
-        post_ri_time = np.where(mtime == 71)[0][0]
+        post_ri_time = np.where(mtime == 76)[0][0]
         bottom = np.searchsorted(z, 10) - 1  # More efficient than np.where(z > 10)[0][0]
         top = np.searchsorted(z, 20) + 1
         z = z[bottom: top]
