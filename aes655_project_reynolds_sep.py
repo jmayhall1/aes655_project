@@ -79,7 +79,7 @@ if __name__ == "__main__":
     plt.figure(figsize=(10, 6))
     plt.contourf(preri_rey_avg, cmap='nipy_spectral', vmin=0, vmax=1e10,
                  levels=np.linspace(0, 1e10, 20),
-                 extent=(np.min(x3d), np.max(x3d), np.min(z3d), np.max(z3d)))
+                 extent=(np.min(ri_x3d), np.max(ri_x3d), np.min(ri_z3d), np.max(ri_z3d)))
     plt.ylabel('Height (km)')
     plt.xlabel(r'Distance from TC Center (km)')
     plt.yticks(ticks=np.arange(10, 21, 2))
@@ -92,7 +92,7 @@ if __name__ == "__main__":
     plt.figure(figsize=(10, 6))
     plt.contourf(ri_rey_avg, cmap='nipy_spectral', vmin=0, vmax=1e10,
                  levels=np.linspace(0, 1e10, 20),
-                 extent=(np.min(x3d), np.max(x3d), np.min(z3d), np.max(z3d)))
+                 extent=(np.min(ri_x3d), np.max(ri_x3d), np.min(ri_z3d), np.max(ri_z3d)))
     plt.ylabel('Height (km)')
     plt.yticks(ticks=np.arange(10, 21, 2))
     plt.xticks(ticks=np.arange(0, 301, 50))
@@ -105,7 +105,7 @@ if __name__ == "__main__":
     plt.figure(figsize=(10, 6))
     plt.contourf(postri_rey_avg, cmap='nipy_spectral', vmin=0, vmax=1e10,
                  levels=np.linspace(0, 1e10, 20),
-                 extent=(np.min(x3d), np.max(x3d), np.min(z3d), np.max(z3d)))
+                 extent=(np.min(ri_x3d), np.max(ri_x3d), np.min(ri_z3d), np.max(ri_z3d)))
     plt.ylabel('Height (km)')
     plt.xlabel(r'Distance from TC Center (km)')
     plt.yticks(ticks=np.arange(10, 21, 2))

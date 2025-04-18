@@ -5,6 +5,7 @@ Last Edited: 04/09/2025
 """
 import os
 
+import matplotlib as mpl
 import matplotlib.pyplot as plt
 import metpy.calc as mpcalc
 import netCDF4
@@ -12,25 +13,60 @@ import numpy as np
 
 
 # Function to save occurrence heatmaps
-# Function to save occurrence heatmaps
-def save_heatmap(data: np.array, title: str, filename: str, colorbar_label: str) -> None:
+def save_heatmap(data: np.array, title: str, filename: str, colorbar_label: str, cticks: np.array,
+                 levels: np.array) -> None:
     """
     Function to plot occurrence heatmaps.
     :param data: Data to be used for plotting
     :param title: Title of the created plot
     :param filename: Saved plot's filename
     :param colorbar_label: Colorbar Label
+    :param cticks: Colorbar ticks
+    :param levels: Plot color levels
     :return: Nothing
     """
     plt.figure(figsize=(10, 6))
     plt.contourf(data, cmap='turbo', vmin=0,
-                 extent=(np.min(x), np.max(x), np.min(z) / 1000, np.max(z) / 1000))
+                 extent=(np.min(x), np.max(x), np.min(z) / 1000, np.max(z) / 1000), levels=levels)
     plt.ylabel('Height (km)')
     plt.yticks(ticks=np.arange(10, 21, 2))
     plt.xticks(ticks=np.arange(0, 301, 50))
     plt.xlabel(r'Distance from TC Center (km)')
     plt.title(title)
-    plt.colorbar(label=colorbar_label)
+    plt.colorbar(label=colorbar_label, ticks=cticks)
+    plt.savefig(os.path.join(base_path, filename), dpi=300)
+    plt.close()
+
+
+def save_heatmap_double(data1: np.array, data2: np.array, title: str, filename: str, colorbar_label: str,
+                        cticks: np.array, levels: np.array) -> None:
+    """
+    Function to plot occurrence heatmaps.
+    :param data1: Data to be used for plotting
+    :param data2: Data to be used for plotting
+    :param title: Title of the created plot
+    :param filename: Saved plot's filename
+    :param colorbar_label: Colorbar Label
+    :param cticks: Colorbar ticks
+    :param levels: Plot color levels
+    :return: Nothing
+    """
+    fig, ax = plt.subplots(figsize=(10, 6), layout='constrained')
+    im1 = ax.contourf(data2, cmap='terrain', vmin=0, vmax=60,
+                      extent=(np.min(x), np.max(x), np.min(z) / 1000, np.max(z) / 1000),
+                      alpha=0.75, levels=np.linspace(0, 60, 12))
+    fig.colorbar(mpl.cm.ScalarMappable(norm=mpl.colors.Normalize(0, 60), cmap='terrain'),
+                 ax=ax, orientation='vertical', label=colorbar_label, ticks=np.linspace(0, 60, 12))
+    im2 = ax.contour(data1, cmap='turbo', vmin=0, vmax=1,
+                     extent=(np.min(x), np.max(x), np.min(z) / 1000, np.max(z) / 1000), levels=levels, linewidths=3)
+    fig.colorbar(mpl.cm.ScalarMappable(norm=mpl.colors.Normalize(0, 1), cmap='turbo'),
+                 ax=ax, orientation='vertical', label=(r'# of $R_b$ < 1 Occurrences' + '\n Divided by # of Timesteps'),
+                 ticks=levels)
+    ax.set_ylabel('Height (km)')
+    ax.set_yticks(ticks=np.arange(10, 21, 2))
+    ax.set_xticks(ticks=np.arange(0, 301, 50))
+    ax.set_xlabel(r'Distance from TC Center (km)')
+    ax.set_title(title)
     plt.savefig(os.path.join(base_path, filename), dpi=300)
     plt.close()
 
@@ -116,6 +152,10 @@ if __name__ == "__main__":
     # Compute the average Richardson number
     postri_R_avg = np.nanmean(postri_R, axis=0)
 
+    preri_wind_avg = np.nanmean(np.sqrt(preri_u ** 2 + preri_v ** 2), axis=0)
+    ri_wind_avg = np.nanmean(np.sqrt(ri_u ** 2 + ri_v ** 2), axis=0)
+    postri_wind_avg = np.nanmean(np.sqrt(postri_u ** 2 + postri_v ** 2), axis=0)
+
     # Save the average Richardson number plot
     preri_R_avg[preri_R_avg > 10] = 10
     plt.figure(figsize=(10, 6))
@@ -175,13 +215,22 @@ if __name__ == "__main__":
     # Save occurrence heatmaps
     save_heatmap(minimum_loc, 'Location of Minimum $R_b$ Before RI \n Normalized By Number of Timesteps',
                  'preri_minRb_loc.png',
-                 colorbar_label=(r'# of Minimum $R_b$ Occurrences' + '\n Divided by # of Timesteps'))
+                 colorbar_label=(r'# of Minimum $R_b$ Occurrences' + '\n Divided by # of Timesteps'),
+                 cticks=np.linspace(0, 0.2, 10), levels=np.linspace(0, 0.2, 10))
     save_heatmap(loc025, 'Location of $R_b$ < 0.25 Before RI \n Normalized By Number of Timesteps',
                  'preri_025Rb_loc.png',
-                 colorbar_label=(r'# of $R_b$ < 0.25 Occurrences' + '\n Divided by # of Timesteps'))
+                 colorbar_label=(r'# of $R_b$ < 0.25 Occurrences' + '\n Divided by # of Timesteps'),
+                 cticks=np.linspace(0, 1, 10), levels=np.linspace(0, 1, 20))
+    save_heatmap_double(data1=loc025, data2=preri_wind_avg,
+                        title='Location of $R_b$ < 0.25 Before RI \n Normalized By Number of'
+                              'Timesteps Contoured over Velocity Before RI',
+                        filename='preri_025Rb_wind_loc.png',
+                        colorbar_label=(r'Velocity ($\frac{m}{s}$)'),
+                        cticks=np.linspace(0, 1, 10), levels=np.linspace(0, 1, 20))
     save_heatmap(loc1, 'Location of $R_b$ < 1 Before RI \n Normalized By Number of Timesteps',
                  'preri_1Rb_loc.png',
-                 colorbar_label=(r'# of $R_b$ < 1 Occurrences' + '\n Divided by # of Timesteps'))
+                 colorbar_label=(r'# of $R_b$ < 1 Occurrences' + '\n Divided by # of Timesteps'),
+                 cticks=np.linspace(0, 1.1, 10), levels=np.linspace(0, 1.1, 20))
 
     # Initialize tracking arrays
     num_timesteps, zdim, xdim = ri_R.shape
@@ -202,13 +251,22 @@ if __name__ == "__main__":
     # Save occurrence heatmaps
     save_heatmap(minimum_loc, 'Location of Minimum $R_b$ During RI \n Normalized By Number of Timesteps',
                  'ri_minRb_loc.png',
-                 colorbar_label=(r'# of Minimum $R_b$ Occurrences' + '\n Divided by # of Timesteps'))
+                 colorbar_label=(r'# of Minimum $R_b$ Occurrences' + '\n Divided by # of Timesteps'),
+                 cticks=np.linspace(0, 0.2, 10), levels=np.linspace(0, 0.2, 10))
     save_heatmap(loc025, 'Location of $R_b$ < 0.25 During RI \n Normalized By Number of Timesteps',
                  'ri_025Rb_loc.png',
-                 colorbar_label=(r'# of $R_b$ < 0.25 Occurrences' + '\n Divided by # of Timesteps'))
+                 colorbar_label=(r'# of $R_b$ < 0.25 Occurrences' + '\n Divided by # of Timesteps'),
+                 cticks=np.linspace(0, 1, 10), levels=np.linspace(0, 1, 20))
+    save_heatmap_double(data1=loc025, data2=ri_wind_avg,
+                        title='Location of $R_b$ < 0.25 During RI \n Normalized By Number of'
+                              'Timesteps Contoured over During RI',
+                        filename='ri_025Rb_wind_loc.png',
+                        colorbar_label=(r'Velocity ($\frac{m}{s}$)'),
+                        cticks=np.linspace(0, 1, 10), levels=np.linspace(0, 1, 20))
     save_heatmap(loc1, 'Location of $R_b$ < 1 During RI \n Normalized By Number of Timesteps',
                  'ri_1Rb_loc.png',
-                 colorbar_label=(r'# of $R_b$ < 1 Occurrences' + '\n Divided by # of Timesteps'))
+                 colorbar_label=(r'# of $R_b$ < 1 Occurrences' + '\n Divided by # of Timesteps'),
+                 cticks=np.linspace(0, 1.1, 10), levels=np.linspace(0, 1.1, 20))
 
     # Initialize tracking arrays
     num_timesteps, zdim, xdim = postri_R.shape
@@ -229,10 +287,19 @@ if __name__ == "__main__":
     # Save occurrence heatmaps
     save_heatmap(minimum_loc, 'Location of Minimum $R_b$ After RI \n Normalized By Number of Timesteps',
                  'postri_minRb_loc.png',
-                 colorbar_label=(r'# of Minimum $R_b$ Occurrences' + '\n Divided by # of Timesteps'))
+                 colorbar_label=(r'# of Minimum $R_b$ Occurrences' + '\n Divided by # of Timesteps'),
+                 cticks=np.linspace(0, 0.2, 10), levels=np.linspace(0, 0.2, 10))
     save_heatmap(loc025, 'Location of $R_b$ < 0.25 After RI \n Normalized By Number of Timesteps',
                  'postri_025Rb_loc.png',
-                 colorbar_label=(r'# of $R_b$ < 0.25 Occurrences' + '\n Divided by # of Timesteps'))
+                 colorbar_label=(r'# of $R_b$ < 0.25 Occurrences' + '\n Divided by # of Timesteps'),
+                 cticks=np.linspace(0, 1, 10), levels=np.linspace(0, 1, 20))
+    save_heatmap_double(data1=loc025, data2=postri_wind_avg,
+                        title='Location of $R_b$ < 0.25 After RI \n Normalized By Number of'
+                              'Timesteps Contoured over Velocity after RI',
+                        filename='postri_025Rb_wind_loc.png',
+                        colorbar_label=(r'Velocity ($\frac{m}{s}$)'),
+                        cticks=np.linspace(0, 1, 10), levels=np.linspace(0, 1, 20))
     save_heatmap(loc1, 'Location of $R_b$ < 1 After RI \n Normalized By Number of Timesteps',
                  'postri_1Rb_loc.png',
-                 colorbar_label=(r'# of $R_b$ < 1 Occurrences' + '\n Divided by # of Timesteps'))
+                 colorbar_label=(r'# of $R_b$ < 1 Occurrences' + '\n Divided by # of Timesteps'),
+                 cticks=np.linspace(0, 1.1, 10), levels=np.linspace(0, 1.1, 20))

@@ -14,10 +14,12 @@ from matplotlib.colors import TwoSlopeNorm
 
 # Function to plot data
 def plot_and_save(data_func: np.array, title: str, filename: str, xticks: np.array,
-                  cmap: str, cbar_label='TKE per Second ($m^2/s^3$)') -> None:
+                  cmap: str, cticks: np.array, levels: np.array, cbar_label='TKE per Second ($m^2/s^3$)') -> None:
     """
     Function for plotting arrays.
+    :param cticks: Colorbar ticks
     :param xticks: X-axis ticks
+    :param levels: Colorbar levels
     :param data_func: Array to be plotted.
     :param title: Title of plot.
     :param filename: Filename of plot being saved.
@@ -26,13 +28,13 @@ def plot_and_save(data_func: np.array, title: str, filename: str, xticks: np.arr
     :return: Nothing.
     """
     plt.figure(figsize=(10, 6))
-    plt.contourf(data_func, cmap=cmap, extent=(np.min(x), np.max(x), np.min(z), np.max(z)))
+    plt.contourf(data_func, cmap=cmap, extent=(np.min(x), np.max(x), np.min(z), np.max(z)), levels=levels)
     plt.xlabel(r'Distance from TC Center (km)')
     plt.ylabel('Height (km)')
     plt.yticks(ticks=np.arange(10, 21, 2))
     plt.xticks(xticks)
     plt.title(title)
-    plt.colorbar(label=cbar_label)
+    plt.colorbar(label=cbar_label, ticks=cticks)
     plt.savefig(os.path.join(output_dir, filename), dpi=300)
     plt.close()
 
@@ -77,51 +79,72 @@ if __name__ == "__main__":
 
     # Plot averaged data
     plot_and_save(preri_avg_data['qshear'], 'Average TKE Shear Production Before RI', 'preri_shear_avg.png',
-                  cmap='turbo', xticks=np.arange(0, 301, 50))
+                  cmap='turbo', xticks=np.arange(0, 301, 50), cticks=np.linspace(0, 0.05, 10),
+                  levels=np.linspace(0, 0.05, 20))
     plot_and_save(preri_avg_data['qbuoy'], 'Average TKE Buoyancy Production Before RI', 'preri_buoy_avg.png',
-                  cmap='turbo', xticks=np.arange(0, 301, 50))
+                  cmap='turbo', xticks=np.arange(0, 301, 50), cticks=np.linspace(-0.004, 0.001, 10),
+                  levels=np.linspace(-0.004, 0.001, 20))
     plot_and_save(preri_avg_data['qdiss'], 'Average TKE Dissipation Before RI', 'preri_diss_avg.png',
-                  cmap='turbo', xticks=np.arange(0, 301, 50))
+                  cmap='turbo', xticks=np.arange(0, 301, 50), cticks=np.linspace(-0.04, 0, 10),
+                  levels=np.linspace(-0.04, 0, 20))
     plot_and_save(preri_avg_data['dqke'], 'Average TKE Change Before RI', 'preri_change_avg.png',
-                  cmap='turbo', xticks=np.arange(0, 301, 50))
+                  cmap='turbo', xticks=np.arange(0, 301, 50), cticks=np.linspace(-0.0015, 0.004, 11),
+                  levels=np.linspace(-0.0015, 0.004, 11))
     plot_and_save(preri_avg_data['qke_adv'], 'Average TKE Advection Before RI', 'preri_adv_avg.png',
-                  cmap='turbo', xticks=np.arange(0, 301, 50))
+                  cmap='turbo', xticks=np.arange(0, 301, 50), cticks=np.linspace(-4E-5, 5E-5, 10),
+                  levels=np.linspace(-4E-5, 5E-5, 9))
     plot_and_save(preri_avg_data['qwt'], 'Average TKE Vertical Transport Before RI', 'preri_vert_avg.png',
-                  cmap='turbo', xticks=np.arange(0, 301, 50))
+                  cmap='turbo', xticks=np.arange(0, 301, 50), cticks=np.linspace(-0.01, 0.06, 7),
+                  levels=np.linspace(-0.01, 0.06, 7))
     plot_and_save(preri_avg_data['qke'], 'Average TKE Before RI', 'preri_ke_avg.png', cbar_label='TKE ($m^2/s^2$)',
-                  cmap='turbo', xticks=np.arange(0, 301, 50))
+                  cmap='turbo', xticks=np.arange(0, 301, 50), cticks=np.linspace(0, 12, 12),
+                  levels=np.linspace(0, 12, 12))
 
     # Plot averaged data
     plot_and_save(ri_avg_data['qshear'], 'Average TKE Shear Production During RI', 'ri_shear_avg.png',
-                  cmap='turbo', xticks=np.arange(0, 301, 50))
+                  cmap='turbo', xticks=np.arange(0, 301, 50), cticks=np.linspace(0, 0.05, 10),
+                  levels=np.linspace(0, 0.05, 20))
     plot_and_save(ri_avg_data['qbuoy'], 'Average TKE Buoyancy Production During RI', 'ri_buoy_avg.png',
-                  cmap='turbo', xticks=np.arange(0, 301, 50))
+                  cmap='turbo', xticks=np.arange(0, 301, 50), cticks=np.linspace(-0.04, 0.001, 10),
+                  levels=np.linspace(-0.04, 0.001, 20))
     plot_and_save(ri_avg_data['qdiss'], 'Average TKE Dissipation During RI', 'ri_diss_avg.png',
-                  cmap='turbo', xticks=np.arange(0, 301, 50))
+                  cmap='turbo', xticks=np.arange(0, 301, 50), cticks=np.linspace(-0.04, 0, 10),
+                  levels=np.linspace(-0.04, 0, 20))
     plot_and_save(ri_avg_data['dqke'], 'Average TKE Change During RI', 'ri_change_avg.png',
-                  cmap='turbo', xticks=np.arange(0, 301, 50))
+                  cmap='turbo', xticks=np.arange(0, 301, 50), cticks=np.linspace(-0.0015, 0.004, 11),
+                  levels=np.linspace(-0.0015, 0.004, 11))
     plot_and_save(ri_avg_data['qke_adv'], 'Average TKE Advection During RI', 'ri_adv_avg.png',
-                  cmap='turbo', xticks=np.arange(0, 301, 50))
+                  cmap='turbo', xticks=np.arange(0, 301, 50), cticks=np.linspace(-4E-5, 5E-5, 10),
+                  levels=np.linspace(-4E-5, 5E-5, 9))
     plot_and_save(ri_avg_data['qwt'], 'Average TKE Vertical Transport During RI', 'ri_vert_avg.png',
-                  cmap='turbo', xticks=np.arange(0, 301, 50))
+                  cmap='turbo', xticks=np.arange(0, 301, 50), cticks=np.linspace(-0.01, 0.06, 7),
+                  levels=np.linspace(-0.01, 0.06, 7))
     plot_and_save(ri_avg_data['qke'], 'Average TKE During RI', 'ri_ke_avg.png', cbar_label='TKE ($m^2/s^2$)',
-                  cmap='turbo', xticks=np.arange(0, 301, 50))
+                  cmap='turbo', xticks=np.arange(0, 301, 50), cticks=np.linspace(0, 12, 12),
+                  levels=np.linspace(0, 12, 12))
 
     # Plot averaged data
     plot_and_save(postri_avg_data['qshear'], 'Average TKE Shear Production After RI', 'postri_shear_avg.png',
-                  cmap='turbo', xticks=np.arange(0, 301, 50))
+                  cmap='turbo', xticks=np.arange(0, 301, 50), cticks=np.linspace(0, 0.05, 10),
+                  levels=np.linspace(0, 0.05, 20))
     plot_and_save(postri_avg_data['qbuoy'], 'Average TKE Buoyancy Production After RI', 'postri_buoy_avg.png',
-                  cmap='turbo', xticks=np.arange(0, 301, 50))
+                  cmap='turbo', xticks=np.arange(0, 301, 50), cticks=np.linspace(-0.004, 0.001, 10),
+                  levels=np.linspace(-0.004, 0.001, 20))
     plot_and_save(postri_avg_data['qdiss'], 'Average TKE Dissipation After RI', 'postri_diss_avg.png',
-                  cmap='turbo', xticks=np.arange(0, 301, 50))
+                  cmap='turbo', xticks=np.arange(0, 301, 50), cticks=np.linspace(-0.04, 0, 10),
+                  levels=np.linspace(-0.04, 0, 20))
     plot_and_save(postri_avg_data['dqke'], 'Average TKE Change After RI', 'postri_change_avg.png',
-                  cmap='turbo', xticks=np.arange(0, 301, 50))
+                  cmap='turbo', xticks=np.arange(0, 301, 50), cticks=np.linspace(-0.0015, 0.004, 11),
+                  levels=np.linspace(-0.0015, 0.004, 11))
     plot_and_save(postri_avg_data['qke_adv'], 'Average TKE Advection After RI', 'postri_adv_avg.png',
-                  cmap='turbo', xticks=np.arange(0, 301, 50))
+                  cmap='turbo', xticks=np.arange(0, 301, 50), cticks=np.linspace(-4E-5, 5E-5, 10),
+                  levels=np.linspace(-4E-5, 5E-5, 9))
     plot_and_save(postri_avg_data['qwt'], 'Average TKE Vertical Transport After RI', 'postri_vert_avg.png',
-                  cmap='turbo', xticks=np.arange(0, 301, 50))
+                  cmap='turbo', xticks=np.arange(0, 301, 50), cticks=np.linspace(-0.01, 0.06, 7),
+                  levels=np.linspace(-0.01, 0.06, 7))
     plot_and_save(postri_avg_data['qke'], 'Average TKE After RI', 'postri_ke_avg.png', cbar_label='TKE ($m^2/s^2$)',
-                  cmap='turbo', xticks=np.arange(0, 301, 50))
+                  cmap='turbo', xticks=np.arange(0, 301, 50), cticks=np.linspace(0, 12, 12),
+                  levels=np.linspace(0, 12, 12))
 
     # Create colormap for dominant TKE production term
     colors = ['#FF0000', '#00FF00', '#0000FF', '#FFFF00', '#FF00FF']  # Red, Green, Blue, Yellow, Magenta
